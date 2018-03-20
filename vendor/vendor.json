@@ -1,0 +1,13 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "z1NisI74+G6OHpx4pkwUKaq2iWE=",
+			"path": "gopkg.in/guregu/null.v3",
+			"revision": "e81d6d8d57747b34d7c5fe0d20ebf57692f04ea9",
+			"revisionTime": "2017-12-14T16:32:13Z"
+		}
+	],
+	"rootPath": "github.com/rwestlund/quickbooks-go"
+}
