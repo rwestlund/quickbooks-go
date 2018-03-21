@@ -133,6 +133,46 @@ func (c *Client) FetchCustomers() ([]Customer, error) {
 	return r.QueryResponse.Customer, nil
 }
 
+// CreateCustomer creates the given Customer on the QuickBooks server,
+// returning the resulting Customer object.
+func (c *Client) CreateCustomer(customer *Customer) (*Customer, error) {
+	var u, err = url.Parse(string(c.Endpoint))
+	if err != nil {
+		return nil, err
+	}
+	u.Path = "/v3/company/" + c.RealmID + "/customer"
+	var j []byte
+	j, err = json.Marshal(customer)
+	if err != nil {
+		return nil, err
+	}
+	var req *http.Request
+	req, err = http.NewRequest("POST", u.String(), bytes.NewBuffer(j))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("Accept", "application/json")
+	var res *http.Response
+	res, err = c.Client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	// TODO This could be better...
+	if res.StatusCode != http.StatusOK {
+		return nil, errors.New(strconv.Itoa(res.StatusCode))
+	}
+
+	var r struct {
+		Customer Customer
+		Time     time.Time
+	}
+	err = json.NewDecoder(res.Body).Decode(&r)
+	return &r.Customer, err
+}
+
 // FetchItems returns the list of Items in the QuickBooks account. These are
 // basically product types, and you need them to create invoices.
 func (c *Client) FetchItems() ([]Item, error) {
