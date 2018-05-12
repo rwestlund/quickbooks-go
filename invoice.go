@@ -16,8 +16,8 @@ type Invoice struct {
 	//DepartmentRef
 	PrivateNote string `json:",omitempty"`
 	//LinkedTxn
-	Line []SalesItemLine
-	//TxnTaxDetail
+	Line         []SalesItemLine
+	TxnTaxDetail TxnTaxDetail `json:",omitempty"`
 	CustomerRef  ReferenceType
 	CustomerMemo MemoRef         `json:",omitempty"`
 	BillAddr     PhysicalAddress `json:",omitempty"`
@@ -47,6 +47,31 @@ type Invoice struct {
 	AllowOnlineACHPayment        bool          `json:",omitempty"`
 	Deposit                      float32       `json:",omitempty"`
 	DepositToAccountRef          ReferenceType `json:",omitempty"`
+}
+
+// TxnTaxDetail ...
+type TxnTaxDetail struct {
+	TxnTaxCodeRef ReferenceType `json:",omitempty"`
+	TotalTax      float32       `json:",omitempty"`
+	TaxLine       []Line        `json:",omitempty"`
+}
+
+// Line ...
+type Line struct {
+	Amount float32 `json:",omitempty"`
+	// Must be set to "TaxLineDetail".
+	DetailType    string
+	TaxLineDetail TaxLineDetail
+}
+
+// TaxLineDetail ...
+type TaxLineDetail struct {
+	PercentBased     bool    `json:",omitempty"`
+	NetAmountTaxable float32 `json:",omitempty"`
+	//TaxInclusiveAmount float32 `json:",omitempty"`
+	//OverrideDeltaAmount
+	TaxPercent float32 `json:',omitempty"`
+	TaxRateRef ReferenceType
 }
 
 // SalesItemLine ...
