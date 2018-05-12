@@ -26,6 +26,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -75,7 +76,9 @@ func (c *Client) FetchCompanyInfo() (*CompanyInfo, error) {
 
 	// TODO This could be better...
 	if res.StatusCode != http.StatusOK {
-		return nil, errors.New(strconv.Itoa(res.StatusCode))
+		var msg []byte
+		msg, err = ioutil.ReadAll(res.Body)
+		return nil, errors.New(strconv.Itoa(res.StatusCode) + " " + string(msg))
 	}
 
 	var r struct {
@@ -112,7 +115,9 @@ func (c *Client) FetchCustomers() ([]Customer, error) {
 
 	// TODO This could be better...
 	if res.StatusCode != http.StatusOK {
-		return nil, errors.New(strconv.Itoa(res.StatusCode))
+		var msg []byte
+		msg, err = ioutil.ReadAll(res.Body)
+		return nil, errors.New(strconv.Itoa(res.StatusCode) + " " + string(msg))
 	}
 
 	var r struct {
@@ -162,7 +167,9 @@ func (c *Client) CreateCustomer(customer *Customer) (*Customer, error) {
 
 	// TODO This could be better...
 	if res.StatusCode != http.StatusOK {
-		return nil, errors.New(strconv.Itoa(res.StatusCode))
+		var msg []byte
+		msg, err = ioutil.ReadAll(res.Body)
+		return nil, errors.New(strconv.Itoa(res.StatusCode) + " " + string(msg))
 	}
 
 	var r struct {
@@ -200,7 +207,9 @@ func (c *Client) FetchItems() ([]Item, error) {
 
 	// TODO This could be better...
 	if res.StatusCode != http.StatusOK {
-		return nil, errors.New(strconv.Itoa(res.StatusCode))
+		var msg []byte
+		msg, err = ioutil.ReadAll(res.Body)
+		return nil, errors.New(strconv.Itoa(res.StatusCode) + " " + string(msg))
 	}
 
 	var r struct {
@@ -244,7 +253,9 @@ func (c *Client) FetchItem(id string) (*Item, error) {
 
 	// TODO This could be better...
 	if res.StatusCode != http.StatusOK {
-		return nil, errors.New(strconv.Itoa(res.StatusCode))
+		var msg []byte
+		msg, err = ioutil.ReadAll(res.Body)
+		return nil, errors.New(strconv.Itoa(res.StatusCode) + " " + string(msg))
 	}
 
 	var r struct {
@@ -287,7 +298,9 @@ func (c *Client) CreateInvoice(inv *Invoice) (*Invoice, error) {
 
 	// TODO This could be better...
 	if res.StatusCode != http.StatusOK {
-		return nil, errors.New(strconv.Itoa(res.StatusCode))
+		var msg []byte
+		msg, err = ioutil.ReadAll(res.Body)
+		return nil, errors.New(strconv.Itoa(res.StatusCode) + " " + string(msg))
 	}
 
 	var r struct {
@@ -363,7 +376,9 @@ func (c *Client) DeleteInvoice(id, syncToken string) error {
 	}
 	// TODO This could be better...
 	if res.StatusCode != http.StatusOK {
-		return errors.New(strconv.Itoa(res.StatusCode))
+		var msg []byte
+		msg, err = ioutil.ReadAll(res.Body)
+		return errors.New(strconv.Itoa(res.StatusCode) + " " + string(msg))
 	}
 
 	// TODO they send something back, but is it useful?
