@@ -33,16 +33,6 @@ import (
 	"time"
 )
 
-// EndpointURL specifies the endpoint to connect to.
-type EndpointURL string
-
-const (
-	// ProductionEndpoint is for live apps.
-	ProductionEndpoint EndpointURL = "https://quickbooks.api.intuit.com"
-	// SandboxEndpoint is for testing.
-	SandboxEndpoint EndpointURL = "https://sandbox-quickbooks.api.intuit.com"
-)
-
 // Client is your handle to the QuickBooks API.
 type Client struct {
 	// Get this from oauth2.NewClient().
@@ -97,8 +87,66 @@ func (c *Client) FetchCustomers() ([]Customer, error) {
 	}
 	u.Path = "/v3/company/" + c.RealmID + "/query"
 
+	// See how many customers there are.
 	var v = url.Values{}
-	v.Add("query", "SELECT * FROM Customer")
+	v.Add("query", "SELECT COUNT(*) FROM Customer")
+	u.RawQuery = v.Encode()
+	var req *http.Request
+	req, err = http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Accept", "application/json")
+	var res *http.Response
+	res, err = c.Client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	// TODO This could be better...
+	if res.StatusCode != http.StatusOK {
+		var msg []byte
+		msg, err = ioutil.ReadAll(res.Body)
+		return nil, errors.New(strconv.Itoa(res.StatusCode) + " " + string(msg))
+	}
+
+	var r struct {
+		QueryResponse struct {
+			TotalCount int
+		}
+	}
+	err = json.NewDecoder(res.Body).Decode(&r)
+	if err != nil {
+		return nil, err
+	}
+
+	if r.QueryResponse.TotalCount == 0 {
+		return make([]Customer, 0), nil
+	}
+
+	var customers = make([]Customer, 0, r.QueryResponse.TotalCount)
+	for i := 0; i < r.QueryResponse.TotalCount; i += queryPageSize {
+		var page, err = c.fetchCustomerPage(i + 1)
+		if err != nil {
+			return nil, err
+		}
+		customers = append(customers, page...)
+	}
+	return customers, nil
+}
+
+// Fetch one page of results, because we can't get them all in one query.
+func (c *Client) fetchCustomerPage(startpos int) ([]Customer, error) {
+	var u, err = url.Parse(string(c.Endpoint))
+	if err != nil {
+		return nil, err
+	}
+	u.Path = "/v3/company/" + c.RealmID + "/query"
+
+	var v = url.Values{}
+	v.Add("query", "SELECT * FROM Customer ORDERBY Id STARTPOSITION "+
+		strconv.Itoa(startpos)+" MAXRESULTS "+strconv.Itoa(queryPageSize))
 	u.RawQuery = v.Encode()
 	var req *http.Request
 	req, err = http.NewRequest("GET", u.String(), nil)
