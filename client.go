@@ -238,7 +238,7 @@ func (c *Client) FetchItems() ([]Item, error) {
 	u.Path = "/v3/company/" + c.RealmID + "/query"
 
 	var v = url.Values{}
-	v.Add("query", "SELECT * FROM Item")
+	v.Add("query", "SELECT * FROM Item MAXRESULTS "+strconv.Itoa(queryPageSize))
 	u.RawQuery = v.Encode()
 	var req *http.Request
 	req, err = http.NewRequest("GET", u.String(), nil)
