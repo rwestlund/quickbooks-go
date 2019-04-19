@@ -366,7 +366,7 @@ func (c *Client) DeleteInvoice(id, syncToken string) error {
 	if err != nil {
 		return err
 	}
-	u.Path = "/v3/company/" + c.RealmID + "/invoice?operation=delete"
+	u.Path = "/v3/company/" + c.RealmID + "/invoice"
 	var j []byte
 	j, err = json.Marshal(struct {
 		ID        string `json:"Id"`
@@ -379,7 +379,7 @@ func (c *Client) DeleteInvoice(id, syncToken string) error {
 		return err
 	}
 	var req *http.Request
-	req, err = http.NewRequest("POST", u.String(), bytes.NewBuffer(j))
+	req, err = http.NewRequest("POST", u.String()+"?operation=delete", bytes.NewBuffer(j))
 	if err != nil {
 		return err
 	}
