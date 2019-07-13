@@ -109,6 +109,60 @@ type SalesItemLineDetail struct {
 	DiscountRate    float32       `json:",omitempty"`
 	DiscountAmt     float32       `json:",omitempty"`
 }
+
+// FetchInvoices gets the full list of Invoices in the QuickBooks account.
+func (c *Client) FetchInvoices() ([]Invoice, error) {
+
+	// See how many invoices there are.
+	var r struct {
+		QueryResponse struct {
+			TotalCount int
+		}
+	}
+	err := c.query("SELECT COUNT(*) FROM Invoice", &r)
+	if err != nil {
+		return nil, err
+	}
+
+	if r.QueryResponse.TotalCount == 0 {
+		return make([]Invoice, 0), nil
+	}
+
+	var invoices = make([]Invoice, 0, r.QueryResponse.TotalCount)
+	for i := 0; i < r.QueryResponse.TotalCount; i += queryPageSize {
+		var page, err = c.fetchInvoicePage(i + 1)
+		if err != nil {
+			return nil, err
+		}
+		invoices = append(invoices, page...)
+	}
+	return invoices, nil
+}
+
+// Fetch one page of results, because we can't get them all in one query.
+func (c *Client) fetchInvoicePage(startpos int) ([]Invoice, error) {
+
+	var r struct {
+		QueryResponse struct {
+			Invoice       []Invoice
+			StartPosition int
+			MaxResults    int
+		}
+	}
+	q := "SELECT * FROM Invoice ORDERBY Id STARTPOSITION " +
+		strconv.Itoa(startpos) + " MAXRESULTS " + strconv.Itoa(queryPageSize)
+	err := c.query(q, &r)
+	if err != nil {
+		return nil, err
+	}
+
+	// Make sure we don't return nil if there are no invoices.
+	if r.QueryResponse.Invoice == nil {
+		r.QueryResponse.Invoice = make([]Invoice, 0)
+	}
+	return r.QueryResponse.Invoice, nil
+}
+
 // CreateInvoice creates the given Invoice on the QuickBooks server, returning
 // the resulting Invoice object.
 func (c *Client) CreateInvoice(inv *Invoice) (*Invoice, error) {
