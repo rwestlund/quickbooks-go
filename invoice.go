@@ -40,11 +40,11 @@ type Invoice struct {
 	ShipMethodRef ReferenceType `json:",omitempty"`
 	ShipDate      Date          `json:",omitempty"`
 	TrackingNum   string        `json:",omitempty"`
-	TotalAmt      float32       `json:",omitempty"`
+	TotalAmt      json.Number   `json:",omitempty"`
 	//CurrencyRef
-	ExchangeRate          float32      `json:",omitempty"`
-	HomeAmtTotal          float32      `json:",omitempty"`
-	HomeBalance           float32      `json:",omitempty"`
+	ExchangeRate          json.Number  `json:",omitempty"`
+	HomeAmtTotal          json.Number  `json:",omitempty"`
+	HomeBalance           json.Number  `json:",omitempty"`
 	ApplyTaxAfterDiscount bool         `json:",omitempty"`
 	PrintStatus           string       `json:",omitempty"`
 	EmailStatus           string       `json:",omitempty"`
@@ -52,24 +52,24 @@ type Invoice struct {
 	BillEmailCC           EmailAddress `json:"BillEmailCc,omitempty"`
 	BillEmailBCC          EmailAddress `json:"BillEmailBcc,omitempty"`
 	//DeliveryInfo
-	Balance                      float32       `json:",omitempty"`
+	Balance                      json.Number   `json:",omitempty"`
 	TxnSource                    string        `json:",omitempty"`
 	AllowOnlineCreditCardPayment bool          `json:",omitempty"`
 	AllowOnlineACHPayment        bool          `json:",omitempty"`
-	Deposit                      float32       `json:",omitempty"`
+	Deposit                      json.Number   `json:",omitempty"`
 	DepositToAccountRef          ReferenceType `json:",omitempty"`
 }
 
 // TxnTaxDetail ...
 type TxnTaxDetail struct {
 	TxnTaxCodeRef ReferenceType `json:",omitempty"`
-	TotalTax      float32       `json:",omitempty"`
+	TotalTax      json.Number   `json:",omitempty"`
 	TaxLine       []Line        `json:",omitempty"`
 }
 
 // Line ...
 type Line struct {
-	Amount float32 `json:",omitempty"`
+	Amount json.Number `json:",omitempty"`
 	// Must be set to "TaxLineDetail".
 	DetailType    string
 	TaxLineDetail TaxLineDetail
@@ -77,11 +77,11 @@ type Line struct {
 
 // TaxLineDetail ...
 type TaxLineDetail struct {
-	PercentBased     bool    `json:",omitempty"`
-	NetAmountTaxable float32 `json:",omitempty"`
-	//TaxInclusiveAmount float32 `json:",omitempty"`
+	PercentBased     bool        `json:",omitempty"`
+	NetAmountTaxable json.Number `json:",omitempty"`
+	//TaxInclusiveAmount json.Number `json:",omitempty"`
 	//OverrideDeltaAmount
-	TaxPercent float32 `json:',omitempty"`
+	TaxPercent json.Number `json:',omitempty"`
 	TaxRateRef ReferenceType
 }
 
@@ -90,7 +90,7 @@ type SalesItemLine struct {
 	ID                  string `json:"Id,omitempty"`
 	LineNum             int    `json:",omitempty"`
 	Description         string `json:",omitempty"`
-	Amount              float32
+	Amount              json.Number
 	DetailType          string
 	SalesItemLineDetail SalesItemLineDetail
 }
@@ -99,15 +99,15 @@ type SalesItemLine struct {
 type SalesItemLineDetail struct {
 	ItemRef   ReferenceType `json:",omitempty"`
 	ClassRef  ReferenceType `json:",omitempty"`
-	UnitPrice float32       `json:",omitempty"`
+	UnitPrice json.Number   `json:",omitempty"`
 	//MarkupInfo
 	Qty             int           `json:",omitempty"`
 	ItemAccountRef  ReferenceType `json:",omitempty"`
 	TaxCodeRef      ReferenceType `json:",omitempty"`
 	ServiceDate     null.Time     `json:",omitempty"`
-	TaxInclusiveAmt float32       `json:",omitempty"`
-	DiscountRate    float32       `json:",omitempty"`
-	DiscountAmt     float32       `json:",omitempty"`
+	TaxInclusiveAmt json.Number   `json:",omitempty"`
+	DiscountRate    json.Number   `json:",omitempty"`
+	DiscountAmt     json.Number   `json:",omitempty"`
 }
 
 // FetchInvoices gets the full list of Invoices in the QuickBooks account.

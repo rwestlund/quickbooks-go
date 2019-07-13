@@ -49,9 +49,9 @@ type Customer struct {
 	Level int `json:",omitempty"`
 	//SalesTermRef
 	//PaymentMethodRef
-	Balance         float32   `json:",omitempty"`
-	OpenBalanceDate time.Time `json:",omitempty"`
-	BalanceWithJobs float32   `json:",omitempty"`
+	Balance         json.Number `json:",omitempty"`
+	OpenBalanceDate time.Time   `json:",omitempty"`
+	BalanceWithJobs json.Number `json:",omitempty"`
 	//CurrencyRef
 }
 

@@ -26,19 +26,19 @@ type Item struct {
 	//ParentRef
 	//Level
 	//FullyQualifiedName
-	Taxable             bool    `json:",omitempty"`
-	SalesTaxIncluded    bool    `json:",omitempty"`
-	UnitPrice           float32 `json:",omitempty"`
+	Taxable             bool        `json:",omitempty"`
+	SalesTaxIncluded    bool        `json:",omitempty"`
+	UnitPrice           json.Number `json:",omitempty"`
 	Type                string
 	IncomeAccountRef    ReferenceType
 	ExpenseAccountRef   ReferenceType
-	PurchaseDesc        string  `json:",omitempty"`
-	PurchaseTaxIncluded bool    `json:",omitempty"`
-	PurchaseCost        float32 `json:",omitempty"`
+	PurchaseDesc        string      `json:",omitempty"`
+	PurchaseTaxIncluded bool        `json:",omitempty"`
+	PurchaseCost        json.Number `json:",omitempty"`
 	AssetAccountRef     ReferenceType
 	TrackQtyOnHand      bool `json:",omitempty"`
 	//InvStartDate time.Time
-	QtyOnHand          float32       `json:",omitempty"`
+	QtyOnHand          json.Number   `json:",omitempty"`
 	SalesTaxCodeRef    ReferenceType `json:",omitempty"`
 	PurchaseTaxCodeRef ReferenceType `json:",omitempty"`
 }
