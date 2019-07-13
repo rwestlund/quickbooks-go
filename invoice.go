@@ -3,7 +3,18 @@
 
 package quickbooks
 
-import null "gopkg.in/guregu/null.v3"
+import (
+	"bytes"
+	"encoding/json"
+	"errors"
+	"io/ioutil"
+	"net/http"
+	"net/url"
+	"strconv"
+	"time"
+
+	null "gopkg.in/guregu/null.v3"
+)
 
 // Invoice represents a QuickBooks Invoice object.
 type Invoice struct {
@@ -97,4 +108,119 @@ type SalesItemLineDetail struct {
 	TaxInclusiveAmt float32       `json:",omitempty"`
 	DiscountRate    float32       `json:",omitempty"`
 	DiscountAmt     float32       `json:",omitempty"`
+}
+// CreateInvoice creates the given Invoice on the QuickBooks server, returning
+// the resulting Invoice object.
+func (c *Client) CreateInvoice(inv *Invoice) (*Invoice, error) {
+	var u, err = url.Parse(string(c.Endpoint))
+	if err != nil {
+		return nil, err
+	}
+	u.Path = "/v3/company/" + c.RealmID + "/invoice"
+	var j []byte
+	j, err = json.Marshal(inv)
+	if err != nil {
+		return nil, err
+	}
+	var req *http.Request
+	req, err = http.NewRequest("POST", u.String(), bytes.NewBuffer(j))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("Accept", "application/json")
+	var res *http.Response
+	res, err = c.Client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	// TODO This could be better...
+	if res.StatusCode != http.StatusOK {
+		var msg []byte
+		msg, err = ioutil.ReadAll(res.Body)
+		return nil, errors.New(strconv.Itoa(res.StatusCode) + " " + string(msg))
+	}
+
+	var r struct {
+		Invoice Invoice
+		Time    time.Time
+	}
+	err = json.NewDecoder(res.Body).Decode(&r)
+	return &r.Invoice, err
+}
+
+// DeleteInvoice deletes the given Invoice by ID and sync token from the
+// QuickBooks server.
+func (c *Client) DeleteInvoice(id, syncToken string) error {
+	var u, err = url.Parse(string(c.Endpoint))
+	if err != nil {
+		return err
+	}
+	u.Path = "/v3/company/" + c.RealmID + "/invoice"
+	var j []byte
+	j, err = json.Marshal(struct {
+		ID        string `json:"Id"`
+		SyncToken string
+	}{
+		ID:        id,
+		SyncToken: syncToken,
+	})
+	if err != nil {
+		return err
+	}
+	var req *http.Request
+	req, err = http.NewRequest("POST", u.String()+"?operation=delete", bytes.NewBuffer(j))
+	if err != nil {
+		return err
+	}
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("Accept", "application/json")
+	var res *http.Response
+	res, err = c.Client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+	//var b, _ = ioutil.ReadAll(res.Body)
+	//log.Println(string(b))
+
+	// If the invoice was already deleted, QuickBooks returns 400 :(
+	// The response looks like this:
+	// {"Fault":{"Error":[{"Message":"Object Not Found","Detail":"Object Not Found : Something you're trying to use has been made inactive. Check the fields with accounts, invoices, items, vendors or employees.","code":"610","element":""}],"type":"ValidationFault"},"time":"2018-03-20T20:15:59.571-07:00"}
+
+	// This is slightly horrifying and not documented in their API. When this
+	// happens we just return success; the goal of deleting it has been
+	// accomplished, just not by us.
+	if res.StatusCode == http.StatusBadRequest {
+		var r struct {
+			Fault struct {
+				Error []struct {
+					Message string
+					Detail  string
+					Code    string `json:"code"`
+					Element string `json:"element"`
+				}
+				Type string `json:"type"`
+			}
+			Time time.Time `json:"time"`
+		}
+		err = json.NewDecoder(res.Body).Decode(&r)
+		if err != nil {
+			return err
+		}
+		if r.Fault.Error[0].Message == "Object Not Found" {
+			return nil
+		}
+	}
+	// TODO This could be better...
+	if res.StatusCode != http.StatusOK {
+		var msg []byte
+		msg, err = ioutil.ReadAll(res.Body)
+		return errors.New(strconv.Itoa(res.StatusCode) + " " + string(msg))
+	}
+
+	// TODO they send something back, but is it useful?
+	return nil
 }
