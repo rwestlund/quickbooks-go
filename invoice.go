@@ -23,7 +23,7 @@ type Invoice struct {
 	MetaData  MetaData `json:",omitempty"`
 	//CustomField
 	DocNumber string `json:",omitempty"`
-	//TxnDate   time.Time `json:",omitempty"`
+	TxnDate   Date   `json:",omitempty"`
 	//DepartmentRef
 	PrivateNote string `json:",omitempty"`
 	//LinkedTxn
@@ -35,12 +35,12 @@ type Invoice struct {
 	ShipAddr     PhysicalAddress `json:",omitempty"`
 	ClassRef     ReferenceType   `json:",omitempty"`
 	SalesTermRef ReferenceType   `json:",omitempty"`
-	//DueDate      time.Time       `json:",omitempty"`
+	DueDate      Date            `json:",omitempty"`
 	//GlobalTaxCalculation
 	ShipMethodRef ReferenceType `json:",omitempty"`
-	//ShipDate      time.Time     `json:",omitempty"`
-	TrackingNum string  `json:",omitempty"`
-	TotalAmt    float32 `json:",omitempty"`
+	ShipDate      Date          `json:",omitempty"`
+	TrackingNum   string        `json:",omitempty"`
+	TotalAmt      float32       `json:",omitempty"`
 	//CurrencyRef
 	ExchangeRate          float32      `json:",omitempty"`
 	HomeAmtTotal          float32      `json:",omitempty"`
