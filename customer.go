@@ -35,16 +35,16 @@ type Customer struct {
 	AlternatePhone     TelephoneNumber `json:",omitempty"`
 	Mobile             TelephoneNumber `json:",omitempty"`
 	Fax                TelephoneNumber `json:",omitempty"`
-	PrimaryEmailAddr   EmailAddress    `json:",omitempty"`
-	//WebAddr
+	PrimaryEmailAddr   *EmailAddress   `json:",omitempty"`
+	WebAddr            *WebSiteAddress `json:",omitempty"`
 	//DefaultTaxCodeRef
-	Taxable              bool            `json:",omitempty"`
-	TaxExemptionReasonID string          `json:"TaxExemptionReasonId,omitempty"`
-	BillAddr             PhysicalAddress `json:",omitempty"`
-	ShipAddr             PhysicalAddress `json:",omitempty"`
-	Notes                string          `json:",omitempty"`
-	Job                  null.Bool       `json:",omitempty"`
-	BillWithParent       bool            `json:",omitempty"`
+	Taxable              bool             `json:",omitempty"`
+	TaxExemptionReasonID string           `json:"TaxExemptionReasonId,omitempty"`
+	BillAddr             *PhysicalAddress `json:",omitempty"`
+	ShipAddr             *PhysicalAddress `json:",omitempty"`
+	Notes                string           `json:",omitempty"`
+	Job                  null.Bool        `json:",omitempty"`
+	BillWithParent       bool             `json:",omitempty"`
 	//ParentRef
 	Level int `json:",omitempty"`
 	//SalesTermRef
@@ -53,6 +53,33 @@ type Customer struct {
 	OpenBalanceDate time.Time `json:",omitempty"`
 	BalanceWithJobs float32   `json:",omitempty"`
 	//CurrencyRef
+}
+
+// GetAddress prioritizes the ship address, but falls back on bill address
+func (c Customer) GetAddress() PhysicalAddress {
+	if c.ShipAddr != nil {
+		return *c.ShipAddr
+	}
+	if c.BillAddr != nil {
+		return *c.BillAddr
+	}
+	return PhysicalAddress{}
+}
+
+// GetWebsite de-nests the Website object
+func (c Customer) GetWebsite() string {
+	if c.WebAddr != nil {
+		return c.WebAddr.URI
+	}
+	return ""
+}
+
+// GetPrimaryEmail de-nests the PrimaryEmailAddr object
+func (c Customer) GetPrimaryEmail() string {
+	if c.PrimaryEmailAddr != nil {
+		return c.PrimaryEmailAddr.Address
+	}
+	return ""
 }
 
 // FetchCustomers gets the full list of Customers in the QuickBooks account.
