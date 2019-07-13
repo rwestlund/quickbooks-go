@@ -18,9 +18,9 @@ import (
 
 // Invoice represents a QuickBooks Invoice object.
 type Invoice struct {
-	ID        string `json:"Id,omitempty"`
-	SyncToken string `json:",omitempty"`
-	//MetaData
+	ID        string   `json:"Id,omitempty"`
+	SyncToken string   `json:",omitempty"`
+	MetaData  MetaData `json:",omitempty"`
 	//CustomField
 	DocNumber string `json:",omitempty"`
 	//TxnDate   time.Time `json:",omitempty"`

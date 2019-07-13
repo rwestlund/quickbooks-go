@@ -18,9 +18,9 @@ import (
 
 // Customer represents a QuickBooks Customer object.
 type Customer struct {
-	ID        string `json:"Id,omitempty"`
-	SyncToken string `json:",omitempty"`
-	//MetaData
+	ID                 string          `json:"Id,omitempty"`
+	SyncToken          string          `json:",omitempty"`
+	MetaData           MetaData        `json:",omitempty"`
 	Title              null.String     `json:",omitempty"`
 	GivenName          null.String     `json:",omitempty"`
 	MiddleName         null.String     `json:",omitempty"`
