@@ -22,5 +22,5 @@ type CompanyInfo struct {
 	Domain    string
 	ID        string `json:"Id"`
 	SyncToken string
-	//Metadata
+	Metadata  MetaData `json:",omitempty"`
 }
