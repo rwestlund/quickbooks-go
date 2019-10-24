@@ -135,6 +135,36 @@ func (c *Client) fetchCustomerPage(startpos int) ([]Customer, error) {
 	return r.QueryResponse.Customer, nil
 }
 
+// FetchCustomerByID returns a customer with a given ID.
+func (c *Client) FetchCustomerByID(id string) (*Customer, error) {
+	var u, err = url.Parse(string(c.Endpoint))
+	if err != nil {
+		return nil, err
+	}
+	u.Path = "/v3/company/" + c.RealmID + "/customer/" + id
+	var req *http.Request
+	req, err = http.NewRequest("GET", u.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Accept", "application/json")
+	var res *http.Response
+	res, err = c.Client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusOK {
+		return nil, errors.New("Got status code " + strconv.Itoa(res.StatusCode))
+	}
+	var r struct {
+		Customer Customer
+		Time     time.Time
+	}
+	err = json.NewDecoder(res.Body).Decode(&r)
+	return &r.Customer, err
+}
+
 // CreateCustomer creates the given Customer on the QuickBooks server,
 // returning the resulting Customer object.
 func (c *Client) CreateCustomer(customer *Customer) (*Customer, error) {
@@ -145,6 +175,56 @@ func (c *Client) CreateCustomer(customer *Customer) (*Customer, error) {
 	u.Path = "/v3/company/" + c.RealmID + "/customer"
 	var j []byte
 	j, err = json.Marshal(customer)
+	if err != nil {
+		return nil, err
+	}
+	var req *http.Request
+	req, err = http.NewRequest("POST", u.String(), bytes.NewBuffer(j))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Add("Content-Type", "application/json")
+	req.Header.Add("Accept", "application/json")
+	var res *http.Response
+	res, err = c.Client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	// TODO This could be better...
+	if res.StatusCode != http.StatusOK {
+		var msg []byte
+		msg, err = ioutil.ReadAll(res.Body)
+		return nil, errors.New(strconv.Itoa(res.StatusCode) + " " + string(msg))
+	}
+
+	var r struct {
+		Customer Customer
+		Time     time.Time
+	}
+	err = json.NewDecoder(res.Body).Decode(&r)
+	return &r.Customer, err
+}
+
+// UpdateCustomer updates the given Customer on the QuickBooks server,
+// returning the resulting Customer object. It's a sparse update, as not all QB
+// fields are present in our Customer object.
+func (c *Client) UpdateCustomer(customer *Customer) (*Customer, error) {
+	var u, err = url.Parse(string(c.Endpoint))
+	if err != nil {
+		return nil, err
+	}
+	u.Path = "/v3/company/" + c.RealmID + "/customer"
+	var d = struct {
+		*Customer
+		Sparse bool `json:"sparse"`
+	}{
+		Customer: customer,
+		Sparse:   true,
+	}
+	var j []byte
+	j, err = json.Marshal(d)
 	if err != nil {
 		return nil, err
 	}
