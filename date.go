@@ -4,7 +4,8 @@ import (
 	"time"
 )
 
-const format = "2006-01-02"
+const secondFormat = "2006-01-02"
+const format = "2006-01-02T15:04:05-07:00"
 
 // Date represents a Quickbooks date
 type Date struct {
@@ -17,10 +18,10 @@ func (d *Date) UnmarshalJSON(b []byte) (err error) {
 		b = b[1 : len(b)-1]
 	}
 
-	// Strip time off
-	b = b[:10]
-
 	d.Time, err = time.Parse(format, string(b))
+	if err != nil {
+		d.Time, err = time.Parse(secondFormat, string(b))
+	}
 
 	return err
 }

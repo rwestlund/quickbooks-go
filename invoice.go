@@ -11,9 +11,6 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-	"time"
-
-	null "gopkg.in/guregu/null.v3"
 )
 
 // Invoice represents a QuickBooks Invoice object.
@@ -101,10 +98,10 @@ type SalesItemLineDetail struct {
 	ClassRef  ReferenceType `json:",omitempty"`
 	UnitPrice json.Number   `json:",omitempty"`
 	//MarkupInfo
-	Qty             int           `json:",omitempty"`
+	Qty             float32       `json:",omitempty"`
 	ItemAccountRef  ReferenceType `json:",omitempty"`
 	TaxCodeRef      ReferenceType `json:",omitempty"`
-	ServiceDate     null.Time     `json:",omitempty"`
+	ServiceDate     Date          `json:",omitempty"`
 	TaxInclusiveAmt json.Number   `json:",omitempty"`
 	DiscountRate    json.Number   `json:",omitempty"`
 	DiscountAmt     json.Number   `json:",omitempty"`
@@ -199,7 +196,7 @@ func (c *Client) CreateInvoice(inv *Invoice) (*Invoice, error) {
 
 	var r struct {
 		Invoice Invoice
-		Time    time.Time
+		Time    Date
 	}
 	err = json.NewDecoder(res.Body).Decode(&r)
 	return &r.Invoice, err
@@ -258,7 +255,7 @@ func (c *Client) DeleteInvoice(id, syncToken string) error {
 				}
 				Type string `json:"type"`
 			}
-			Time time.Time `json:"time"`
+			Time Date `json:"time"`
 		}
 		err = json.NewDecoder(res.Body).Decode(&r)
 		if err != nil {

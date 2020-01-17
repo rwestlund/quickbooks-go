@@ -29,7 +29,6 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-	"time"
 )
 
 // Client is your handle to the QuickBooks API.
@@ -72,7 +71,7 @@ func (c *Client) FetchCompanyInfo() (*CompanyInfo, error) {
 
 	var r struct {
 		CompanyInfo CompanyInfo
-		Time        time.Time
+		Time        Date
 	}
 	err = json.NewDecoder(res.Body).Decode(&r)
 	return &r.CompanyInfo, err
