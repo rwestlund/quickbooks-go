@@ -24,7 +24,7 @@ type Invoice struct {
 	//DepartmentRef
 	PrivateNote string `json:",omitempty"`
 	//LinkedTxn
-	Line         []SalesItemLine
+	Line         []Line
 	TxnTaxDetail TxnTaxDetail `json:",omitempty"`
 	CustomerRef  ReferenceType
 	CustomerMemo MemoRef         `json:",omitempty"`
@@ -66,10 +66,14 @@ type TxnTaxDetail struct {
 
 // Line ...
 type Line struct {
-	Amount json.Number `json:",omitempty"`
-	// Must be set to "TaxLineDetail".
-	DetailType    string
-	TaxLineDetail TaxLineDetail
+	ID                  string `json:"Id,omitempty"`
+	LineNum             int    `json:",omitempty"`
+	Description         string `json:",omitempty"`
+	Amount              json.Number
+	DetailType          string
+	SalesItemLineDetail SalesItemLineDetail `json:",omitempty"`
+	DiscountLineDetail  DiscountLineDetail  `json:",omitempty"`
+	TaxLineDetail       TaxLineDetail       `json:",omitempty"`
 }
 
 // TaxLineDetail ...
@@ -80,16 +84,6 @@ type TaxLineDetail struct {
 	//OverrideDeltaAmount
 	TaxPercent json.Number `json:",omitempty"`
 	TaxRateRef ReferenceType
-}
-
-// SalesItemLine ...
-type SalesItemLine struct {
-	ID                  string `json:"Id,omitempty"`
-	LineNum             int    `json:",omitempty"`
-	Description         string `json:",omitempty"`
-	Amount              json.Number
-	DetailType          string
-	SalesItemLineDetail SalesItemLineDetail
 }
 
 // SalesItemLineDetail ...
@@ -105,6 +99,12 @@ type SalesItemLineDetail struct {
 	TaxInclusiveAmt json.Number   `json:",omitempty"`
 	DiscountRate    json.Number   `json:",omitempty"`
 	DiscountAmt     json.Number   `json:",omitempty"`
+}
+
+// DiscountLineDetail ...
+type DiscountLineDetail struct {
+	PercentBased    bool
+	DiscountPercent float32 `json:",omitempty"`
 }
 
 // FetchInvoices gets the full list of Invoices in the QuickBooks account.
