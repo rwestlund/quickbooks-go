@@ -78,7 +78,7 @@ type TaxLineDetail struct {
 	NetAmountTaxable json.Number `json:",omitempty"`
 	//TaxInclusiveAmount json.Number `json:",omitempty"`
 	//OverrideDeltaAmount
-	TaxPercent json.Number `json:',omitempty"`
+	TaxPercent json.Number `json:",omitempty"`
 	TaxRateRef ReferenceType
 }
 
