@@ -6,8 +6,6 @@ package quickbooks
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -187,11 +185,8 @@ func (c *Client) CreateInvoice(inv *Invoice) (*Invoice, error) {
 	}
 	defer res.Body.Close()
 
-	// TODO This could be better...
 	if res.StatusCode != http.StatusOK {
-		var msg []byte
-		msg, err = ioutil.ReadAll(res.Body)
-		return nil, errors.New(strconv.Itoa(res.StatusCode) + " " + string(msg))
+		return nil, parseFailure(res)
 	}
 
 	var r struct {
@@ -245,18 +240,7 @@ func (c *Client) DeleteInvoice(id, syncToken string) error {
 	// happens we just return success; the goal of deleting it has been
 	// accomplished, just not by us.
 	if res.StatusCode == http.StatusBadRequest {
-		var r struct {
-			Fault struct {
-				Error []struct {
-					Message string
-					Detail  string
-					Code    string `json:"code"`
-					Element string `json:"element"`
-				}
-				Type string `json:"type"`
-			}
-			Time Date `json:"time"`
-		}
+		var r Failure
 		err = json.NewDecoder(res.Body).Decode(&r)
 		if err != nil {
 			return err
@@ -265,11 +249,8 @@ func (c *Client) DeleteInvoice(id, syncToken string) error {
 			return nil
 		}
 	}
-	// TODO This could be better...
 	if res.StatusCode != http.StatusOK {
-		var msg []byte
-		msg, err = ioutil.ReadAll(res.Body)
-		return errors.New(strconv.Itoa(res.StatusCode) + " " + string(msg))
+		return parseFailure(res)
 	}
 
 	// TODO they send something back, but is it useful?

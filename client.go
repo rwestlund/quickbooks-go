@@ -24,11 +24,8 @@ package quickbooks
 
 import (
 	"encoding/json"
-	"errors"
-	"io/ioutil"
 	"net/http"
 	"net/url"
-	"strconv"
 )
 
 // Client is your handle to the QuickBooks API.
@@ -62,11 +59,8 @@ func (c *Client) FetchCompanyInfo() (*CompanyInfo, error) {
 	}
 	defer res.Body.Close()
 
-	// TODO This could be better...
 	if res.StatusCode != http.StatusOK {
-		var msg []byte
-		msg, err = ioutil.ReadAll(res.Body)
-		return nil, errors.New(strconv.Itoa(res.StatusCode) + " " + string(msg))
+		return nil, parseFailure(res)
 	}
 
 	var r struct {
@@ -101,11 +95,8 @@ func (c *Client) query(query string, out interface{}) error {
 	}
 	defer res.Body.Close()
 
-	// TODO This could be better...
 	if res.StatusCode != http.StatusOK {
-		var msg []byte
-		msg, err = ioutil.ReadAll(res.Body)
-		return errors.New(strconv.Itoa(res.StatusCode) + " " + string(msg))
+		return parseFailure(res)
 	}
 
 	return json.NewDecoder(res.Body).Decode(out)
