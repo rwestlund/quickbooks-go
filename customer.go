@@ -11,7 +11,7 @@ import (
 	"net/url"
 	"strconv"
 
-	null "gopkg.in/guregu/null.v3"
+	null "gopkg.in/guregu/null.v4"
 )
 
 // Customer represents a QuickBooks Customer object.
