@@ -37,7 +37,7 @@ type Customer struct {
 	WebAddr            *WebSiteAddress `json:",omitempty"`
 	//DefaultTaxCodeRef
 	Taxable              *bool            `json:",omitempty"`
-	TaxExemptionReasonID string           `json:"TaxExemptionReasonId,omitempty"`
+	TaxExemptionReasonID *string          `json:"TaxExemptionReasonId,omitempty"`
 	BillAddr             *PhysicalAddress `json:",omitempty"`
 	ShipAddr             *PhysicalAddress `json:",omitempty"`
 	Notes                string           `json:",omitempty"`
