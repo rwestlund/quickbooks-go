@@ -140,6 +140,9 @@ func (c *Client) FetchCustomerByID(id string) (*Customer, error) {
 		return nil, err
 	}
 	u.Path = "/v3/company/" + c.RealmID + "/customer/" + id
+	var v = url.Values{}
+	v.Add("minorversion", minorVersion)
+	u.RawQuery = v.Encode()
 	var req *http.Request
 	req, err = http.NewRequest("GET", u.String(), nil)
 	if err != nil {
@@ -171,6 +174,9 @@ func (c *Client) CreateCustomer(customer *Customer) (*Customer, error) {
 		return nil, err
 	}
 	u.Path = "/v3/company/" + c.RealmID + "/customer"
+	var v = url.Values{}
+	v.Add("minorversion", minorVersion)
+	u.RawQuery = v.Encode()
 	var j []byte
 	j, err = json.Marshal(customer)
 	if err != nil {
@@ -211,6 +217,9 @@ func (c *Client) UpdateCustomer(customer *Customer) (*Customer, error) {
 		return nil, err
 	}
 	u.Path = "/v3/company/" + c.RealmID + "/customer"
+	var v = url.Values{}
+	v.Add("minorversion", minorVersion)
+	u.RawQuery = v.Encode()
 	var d = struct {
 		*Customer
 		Sparse bool `json:"sparse"`

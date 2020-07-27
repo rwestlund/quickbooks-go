@@ -166,6 +166,9 @@ func (c *Client) CreateInvoice(inv *Invoice) (*Invoice, error) {
 		return nil, err
 	}
 	u.Path = "/v3/company/" + c.RealmID + "/invoice"
+	var v = url.Values{}
+	v.Add("minorversion", minorVersion)
+	u.RawQuery = v.Encode()
 	var j []byte
 	j, err = json.Marshal(inv)
 	if err != nil {
@@ -205,6 +208,9 @@ func (c *Client) DeleteInvoice(id, syncToken string) error {
 		return err
 	}
 	u.Path = "/v3/company/" + c.RealmID + "/invoice"
+	var v = url.Values{}
+	v.Add("minorversion", minorVersion)
+	u.RawQuery = v.Encode()
 	var j []byte
 	j, err = json.Marshal(struct {
 		ID        string `json:"Id"`

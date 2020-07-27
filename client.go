@@ -46,6 +46,9 @@ func (c *Client) FetchCompanyInfo() (*CompanyInfo, error) {
 		return nil, err
 	}
 	u.Path = "/v3/company/" + c.RealmID + "/companyinfo/" + c.RealmID
+	var v = url.Values{}
+	v.Add("minorversion", minorVersion)
+	u.RawQuery = v.Encode()
 	var req *http.Request
 	req, err = http.NewRequest("GET", u.String(), nil)
 	if err != nil {
@@ -80,6 +83,7 @@ func (c *Client) query(query string, out interface{}) error {
 	u.Path = "/v3/company/" + c.RealmID + "/query"
 
 	var v = url.Values{}
+	v.Add("minorversion", minorVersion)
 	v.Add("query", query)
 	u.RawQuery = v.Encode()
 	var req *http.Request

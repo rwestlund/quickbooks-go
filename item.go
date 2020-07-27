@@ -69,6 +69,9 @@ func (c *Client) FetchItem(id string) (*Item, error) {
 		return nil, err
 	}
 	u.Path = "/v3/company/" + c.RealmID + "/item/" + id
+	var v = url.Values{}
+	v.Add("minorversion", minorVersion)
+	u.RawQuery = v.Encode()
 
 	var req *http.Request
 	req, err = http.NewRequest("GET", u.String(), nil)
