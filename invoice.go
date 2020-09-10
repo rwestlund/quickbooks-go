@@ -210,6 +210,7 @@ func (c *Client) DeleteInvoice(id, syncToken string) error {
 	u.Path = "/v3/company/" + c.RealmID + "/invoice"
 	var v = url.Values{}
 	v.Add("minorversion", minorVersion)
+	v.Add("operation", "delete")
 	u.RawQuery = v.Encode()
 	var j []byte
 	j, err = json.Marshal(struct {
@@ -223,7 +224,7 @@ func (c *Client) DeleteInvoice(id, syncToken string) error {
 		return err
 	}
 	var req *http.Request
-	req, err = http.NewRequest("POST", u.String()+"?operation=delete", bytes.NewBuffer(j))
+	req, err = http.NewRequest("POST", u.String(), bytes.NewBuffer(j))
 	if err != nil {
 		return err
 	}
