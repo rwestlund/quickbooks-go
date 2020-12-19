@@ -62,16 +62,29 @@ type TxnTaxDetail struct {
 	TaxLine       []Line        `json:",omitempty"`
 }
 
+// AccountBasedExpenseLineDetail
+type AccountBasedExpenseLineDetail struct {
+	AccountRef ReferenceType
+	TaxAmount  json.Number `json:",omitempty"`
+	//TaxInclusiveAmt json.Number              `json:",omitempty"`
+	//ClassRef        ReferenceType `json:",omitempty"`
+	//TaxCodeRef      ReferenceType `json:",omitempty"`
+	// MarkupInfo MarkupInfo `json:",omitempty"`
+	//BillableStatus BillableStatusEnum       `json:",omitempty"`
+	//CustomerRef    ReferenceType `json:",omitempty"`
+}
+
 // Line ...
 type Line struct {
-	ID                  string `json:"Id,omitempty"`
-	LineNum             int    `json:",omitempty"`
-	Description         string `json:",omitempty"`
-	Amount              json.Number
-	DetailType          string
-	SalesItemLineDetail SalesItemLineDetail `json:",omitempty"`
-	DiscountLineDetail  DiscountLineDetail  `json:",omitempty"`
-	TaxLineDetail       TaxLineDetail       `json:",omitempty"`
+	ID                            string `json:"Id,omitempty"`
+	LineNum                       int    `json:",omitempty"`
+	Description                   string `json:",omitempty"`
+	Amount                        json.Number
+	DetailType                    string
+	AccountBasedExpenseLineDetail AccountBasedExpenseLineDetail
+	SalesItemLineDetail           SalesItemLineDetail `json:",omitempty"`
+	DiscountLineDetail            DiscountLineDetail  `json:",omitempty"`
+	TaxLineDetail                 TaxLineDetail       `json:",omitempty"`
 }
 
 // TaxLineDetail ...
