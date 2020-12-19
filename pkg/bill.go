@@ -7,12 +7,30 @@ import (
 	"net/url"
 )
 
-
 type Bill struct {
-	VendorRef ReferenceType `json:",omitempty"`
-	Line      []Line
-	DocNumber string
-	// CurrencyRef
+	ID           string        `json:"Id,omitempty"`
+	VendorRef    ReferenceType `json:",omitempty"`
+	Line         []Line
+	SyncToken    string        `json:",omitempty"`
+	CurrencyRef  ReferenceType `json:",omitempty"`
+	TxnDate      Date          `json:",omitempty"`
+	APAccountRef ReferenceType `json:",omitempty"`
+	SalesTermRef ReferenceType `json:",omitempty"`
+	//LinkedTxn
+	//GlobalTaxCalculation
+	TotalAmt                json.Number `json:",omitempty"`
+	TransactionLocationType string      `json:",omitempty"`
+	DueDate                 Date        `json:",omitempty"`
+	MetaData                MetaData    `json:",omitempty"`
+	DocNumber               string
+	PrivateNote             string        `json:",omitempty"`
+	TxnTaxDetail            TxnTaxDetail  `json:",omitempty"`
+	ExchangeRate            json.Number   `json:",omitempty"`
+	DepartmentRef           ReferenceType `json:",omitempty"`
+	IncludeInAnnualTPAR     bool          `json:",omitempty"`
+	HomeBalance             json.Number   `json:",omitempty"`
+	RecurDataRef            ReferenceType `json:",omitempty"`
+	Balance                 json.Number   `json:",omitempty"`
 }
 
 func CreateBill(c Client, bill *Bill) (*Bill, error) {
