@@ -2,8 +2,8 @@ package examples
 
 import (
 	"fmt"
-	"github.com/rwestlund/quickbooks-go/pkg"
-	"github.com/rwestlund/quickbooks-go/pkg/auth"
+	"github.com/nsotgui/quickbooks-go/pkg"
+	"github.com/nsotgui/quickbooks-go/pkg/auth"
 )
 
 const (
