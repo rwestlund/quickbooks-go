@@ -1,5 +1,5 @@
 # quickbooks-go
-![Build](https://github.com/rwestlund/quickbooks-go/workflows/Build/badge.svg)
+![Build](https://github.com/nsotgui/quickbooks-go/workflows/Build/badge.svg)
 [![GoDoc](https://godoc.org/github.com/golang/gddo?status.svg)](http://godoc.org/github.com/rwestlund/quickbooks-go)
 
 quickbooks-go is a Go library that provides access to Intuit's QuickBooks
