@@ -33,7 +33,7 @@ type Bill struct {
 	Balance                 json.Number   `json:",omitempty"`
 }
 
-func CreateBill(c Client, bill *Bill) (*Bill, error) {
+func (c *Client) CreateBill(bill *Bill) (*Bill, error) {
 	var u, err = url.Parse(string(c.Endpoint))
 	if err != nil {
 		return nil, err
