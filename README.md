@@ -11,37 +11,37 @@ use case. Pull requests welcome :)
 
 # Example
 See [_main.go_](./examples/main.go)
-```
+```go
 // Call the discovery api to get latest endpoints (recommended to update 1 time per day)
-	discoveryApis := auth.CallDiscoveryAPI(quickbooks.DiscoverySandboxEndpoint)
-	authClient := auth.Client{
-		DiscoveryAPI: *discoveryApis,
-		ClientId:     clientId,
-		ClientSecret: clientSecret,
-	}
+discoveryApis := auth.CallDiscoveryAPI(quickbooks.DiscoverySandboxEndpoint)
+authClient := auth.Client{
+	DiscoveryAPI: *discoveryApis,
+	ClientId:     clientId,
+	ClientSecret: clientSecret,
+}
 
-	// To do first when you receive the authorization code from quickbooks callback
-	authorizationCode := "<received-from-callback>"
-	bearerToken, _ := authClient.RetrieveBearerToken(authorizationCode)
-	// Save the bearer token inside a db
+// To do first when you receive the authorization code from quickbooks callback
+authorizationCode := "<received-from-callback>"
+bearerToken, _ := authClient.RetrieveBearerToken(authorizationCode)
+// Save the bearer token inside a db
 
-	// When the token expire, you can use the following function
-	bearerToken, _ = authClient.RefreshToken(bearerToken.RefreshToken)
+// When the token expire, you can use the following function
+bearerToken, _ = authClient.RefreshToken(bearerToken.RefreshToken)
 
-	// Initialize the quickbook client handle.
-	realmId := "<realm-id>"
-	var qb = quickbooks.Client{
-		Client:   auth.GetHttpClient(*bearerToken),
-		Endpoint: quickbooks.SandboxEndpoint,
-		RealmID:  realmId,
-	}
+// Initialize the quickbook client handle.
+realmId := "<realm-id>"
+var qb = quickbooks.Client{
+	Client:   auth.GetHttpClient(*bearerToken),
+	Endpoint: quickbooks.SandboxEndpoint,
+	RealmID:  realmId,
+}
 
-	// Make a request!
-	info, _ := qb.FetchCompanyInfo()
-	fmt.Println(info)
+// Make a request!
+info, _ := qb.FetchCompanyInfo()
+fmt.Println(info)
 
-	// Revoke the token, this should be done only if a user unsubscribe from your app
-	authClient.RevokeToken(bearerToken.RefreshToken)
+// Revoke the token, this should be done only if a user unsubscribe from your app
+authClient.RevokeToken(bearerToken.RefreshToken)
 ```
 
 # License
