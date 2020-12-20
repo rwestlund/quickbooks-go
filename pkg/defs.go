@@ -11,6 +11,10 @@ const (
 	ProductionEndpoint EndpointURL = "https://quickbooks.api.intuit.com"
 	// SandboxEndpoint is for testing.
 	SandboxEndpoint EndpointURL = "https://sandbox-quickbooks.api.intuit.com"
+	// DiscoverySandboxEndpoint is for testing.
+	DiscoverySandboxEndpoint EndpointURL = "https://developer.api.intuit.com/.well-known/openid_sandbox_configuration"
+	// DiscoveryProductionEndpoint is for live apps.
+	DiscoveryProductionEndpoint EndpointURL = "https://developer.api.intuit.com/.well-known/openid_configuration"
 )
 
 const queryPageSize = 1000
