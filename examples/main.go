@@ -37,6 +37,7 @@ func main() {
 		RealmID:  realmId,
 	}
 
+	// Make a request!
 	info, _ := qb.FetchCompanyInfo()
 	fmt.Println(info)
 
