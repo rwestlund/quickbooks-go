@@ -2,10 +2,11 @@ package auth
 
 import (
 	"encoding/json"
-	"github.com/nsotgui/quickbooks-go/pkg"
 	"io/ioutil"
 	"log"
 	"net/http"
+
+	"github.com/rwestlund/quickbooks-go"
 )
 
 // Call the discovery API.

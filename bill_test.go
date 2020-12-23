@@ -2,23 +2,34 @@ package quickbooks
 
 import (
 	"encoding/json"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
+	"log"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestBill(t *testing.T) {
-	jsonFile, _ := os.Open("../data/testing/bill.json")
+	jsonFile, err := os.Open("data/testing/bill.json")
+	if err != nil {
+		log.Fatal("When opening JSON file: ", err)
+	}
 	defer jsonFile.Close()
 
 	byteValue, _ := ioutil.ReadAll(jsonFile)
+	if err != nil {
+		log.Fatal("When reading JSON file: ", err)
+	}
 
 	var r struct {
 		Bill Bill
 		Time Date
 	}
-	json.Unmarshal(byteValue, &r)
+	err = json.Unmarshal(byteValue, &r)
+	if err != nil {
+		log.Fatal("When decoding JSON file: ", err)
+	}
 	assert.Equal(t, "2", r.Bill.SyncToken)
 	assert.Equal(t, "Accounts Payable (A/P)", r.Bill.APAccountRef.Name)
 	assert.Equal(t, "33", r.Bill.APAccountRef.Value)
