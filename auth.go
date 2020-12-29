@@ -1,4 +1,4 @@
-package auth
+package quickbooks
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"net/http"
 )
 
-type Client struct {
+type AuthClient struct {
 	// The set of quickbooks APIs
 	DiscoveryAPI DiscoveryAPI
 	// The client ID

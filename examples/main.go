@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/rwestlund/quickbooks-go"
-	"github.com/rwestlund/quickbooks-go/auth"
 )
 
 const (
@@ -15,8 +14,8 @@ const (
 func main() {
 
 	// Call the discovery api to get latest endpoints (recommended to update 1 time per day)
-	discoveryApis := auth.CallDiscoveryAPI(quickbooks.DiscoverySandboxEndpoint)
-	authClient := auth.Client{
+	discoveryApis := quickbooks.CallDiscoveryAPI(quickbooks.DiscoverySandboxEndpoint)
+	authClient := quickbooks.AuthClient{
 		DiscoveryAPI: *discoveryApis,
 		ClientId:     clientId,
 		ClientSecret: clientSecret,
@@ -33,7 +32,7 @@ func main() {
 	// Initialize the quickbook client handle.
 	realmId := "<realm-id>"
 	var qb = quickbooks.Client{
-		Client:   auth.GetHttpClient(*bearerToken),
+		Client:   quickbooks.GetHttpClient(*bearerToken),
 		Endpoint: quickbooks.SandboxEndpoint,
 		RealmID:  realmId,
 	}

@@ -1,4 +1,4 @@
-package auth
+package quickbooks
 
 import (
 	"bytes"
@@ -23,7 +23,7 @@ type BearerToken struct {
 // Method to retrieve access token (bearer token)
 // This method can only be called once
 //
-func (c *Client) RetrieveBearerToken(authorizationCode string) (*BearerToken, error) {
+func (c *AuthClient) RetrieveBearerToken(authorizationCode string) (*BearerToken, error) {
 	log.Println("Entering RetrieveBearerToken ")
 	client := &http.Client{}
 	data := url.Values{}
@@ -56,7 +56,7 @@ func (c *Client) RetrieveBearerToken(authorizationCode string) (*BearerToken, er
 //
 // Call the refresh endpoint to generate new tokens
 //
-func (c *Client) RefreshToken(refreshToken string) (*BearerToken, error) {
+func (c *AuthClient) RefreshToken(refreshToken string) (*BearerToken, error) {
 
 	log.Println("Entering RefreshToken ")
 	client := &http.Client{}
@@ -89,7 +89,7 @@ func (c *Client) RefreshToken(refreshToken string) (*BearerToken, error) {
 //
 // Call the revoke endpoint to revoke tokens
 //
-func (c *Client) RevokeToken(refreshToken string) {
+func (c *AuthClient) RevokeToken(refreshToken string) {
 	log.Println("Entering RevokeToken ")
 	client := &http.Client{}
 	data := url.Values{}
@@ -125,7 +125,7 @@ func getBearerTokenResponse(body []byte) (*BearerToken, error) {
 	return s, err
 }
 
-func basicAuth(c *Client) string {
+func basicAuth(c *AuthClient) string {
 	auth := c.ClientId + ":" + c.ClientSecret
 	return base64.StdEncoding.EncodeToString([]byte(auth))
 }
