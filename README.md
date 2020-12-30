@@ -10,38 +10,51 @@ Online API.
 use case. Pull requests welcome :)
 
 # Example
-See [_main.go_](./examples/main.go)
+
+## Authorization flow
+
+See [_auth_flow_test.go_](./examples/auth_flow_test.go)
 ```go
-// Call the discovery api to get latest endpoints (recommended to update 1 time per day)
-discoveryApis := auth.CallDiscoveryAPI(quickbooks.DiscoverySandboxEndpoint)
-authClient := auth.Client{
-	DiscoveryAPI: *discoveryApis,
-	ClientId:     clientId,
-	ClientSecret: clientSecret,
-}
+clientId     := "<your-client-id>"
+clientSecret := "<your-client-secret>"
+realmId      := "<realm-id>"
+
+qbClient, _ := quickbooks.NewQuickbooksClient(clientId, clientSecret, realmId, false, nil)
 
 // To do first when you receive the authorization code from quickbooks callback
 authorizationCode := "<received-from-callback>"
-bearerToken, _ := authClient.RetrieveBearerToken(authorizationCode)
+bearerToken, _ := qbClient.RetrieveBearerToken(authorizationCode)
 // Save the bearer token inside a db
 
 // When the token expire, you can use the following function
-bearerToken, _ = authClient.RefreshToken(bearerToken.RefreshToken)
-
-// Initialize the quickbook client handle.
-realmId := "<realm-id>"
-var qb = quickbooks.Client{
-	Client:   auth.GetHttpClient(*bearerToken),
-	Endpoint: quickbooks.SandboxEndpoint,
-	RealmID:  realmId,
-}
+bearerToken, _ = qbClient.RefreshToken(bearerToken.RefreshToken)
 
 // Make a request!
-info, _ := qb.FetchCompanyInfo()
+info, _ := qbClient.FetchCompanyInfo()
 fmt.Println(info)
 
 // Revoke the token, this should be done only if a user unsubscribe from your app
-authClient.RevokeToken(bearerToken.RefreshToken)
+qbClient.RevokeToken(bearerToken.RefreshToken)
+```
+
+## Re-using tokens
+
+See [_reuse_token_test.go_](./examples/reuse_token_test.go)
+```go
+clientId     := "<your-client-id>"
+clientSecret := "<your-client-secret>"
+realmId      := "<realm-id>"
+
+token := quickbooks.BearerToken{
+RefreshToken:           "<saved-refresh-token>",
+AccessToken:            "<saved-access-token>",
+}
+
+qbClient, _ := quickbooks.NewQuickbooksClient(clientId, clientSecret, realmId, false, &token)
+
+// Make a request!
+info, _ := qbClient.FetchCompanyInfo()
+fmt.Println(info)
 ```
 
 # License

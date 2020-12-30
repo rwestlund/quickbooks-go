@@ -2,8 +2,10 @@ package quickbooks
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"encoding/json"
+	"golang.org/x/oauth2"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -23,7 +25,7 @@ type BearerToken struct {
 // Method to retrieve access token (bearer token)
 // This method can only be called once
 //
-func (c *AuthClient) RetrieveBearerToken(authorizationCode string) (*BearerToken, error) {
+func (c *Client) RetrieveBearerToken(authorizationCode string) (*BearerToken, error) {
 	log.Println("Entering RetrieveBearerToken ")
 	client := &http.Client{}
 	data := url.Values{}
@@ -32,7 +34,7 @@ func (c *AuthClient) RetrieveBearerToken(authorizationCode string) (*BearerToken
 	data.Add("code", authorizationCode)
 	data.Add("redirect_uri", "https://developer.intuit.com/v2/OAuth2Playground/RedirectUrl")
 
-	request, err := http.NewRequest("POST", string(c.DiscoveryAPI.TokenEndpoint), bytes.NewBufferString(data.Encode()))
+	request, err := http.NewRequest("POST", string(c.discoveryAPI.TokenEndpoint), bytes.NewBufferString(data.Encode()))
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -56,7 +58,7 @@ func (c *AuthClient) RetrieveBearerToken(authorizationCode string) (*BearerToken
 //
 // Call the refresh endpoint to generate new tokens
 //
-func (c *AuthClient) RefreshToken(refreshToken string) (*BearerToken, error) {
+func (c *Client) RefreshToken(refreshToken string) (*BearerToken, error) {
 
 	log.Println("Entering RefreshToken ")
 	client := &http.Client{}
@@ -66,7 +68,7 @@ func (c *AuthClient) RefreshToken(refreshToken string) (*BearerToken, error) {
 	data.Set("grant_type", "refresh_token")
 	data.Add("refresh_token", refreshToken)
 
-	request, err := http.NewRequest("POST", string(c.DiscoveryAPI.TokenEndpoint), bytes.NewBufferString(data.Encode()))
+	request, err := http.NewRequest("POST", string(c.discoveryAPI.TokenEndpoint), bytes.NewBufferString(data.Encode()))
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -83,13 +85,14 @@ func (c *AuthClient) RefreshToken(refreshToken string) (*BearerToken, error) {
 	}
 	bearerTokenResponse, err := getBearerTokenResponse([]byte(body))
 	log.Println("Exiting RefreshToken ")
+	c.Client = getHttpClient(bearerTokenResponse)
 	return bearerTokenResponse, err
 }
 
 //
 // Call the revoke endpoint to revoke tokens
 //
-func (c *AuthClient) RevokeToken(refreshToken string) {
+func (c *Client) RevokeToken(refreshToken string) {
 	log.Println("Entering RevokeToken ")
 	client := &http.Client{}
 	data := url.Values{}
@@ -97,7 +100,7 @@ func (c *AuthClient) RevokeToken(refreshToken string) {
 	//add parameters
 	data.Add("token", refreshToken)
 
-	revokeEndpoint := c.DiscoveryAPI.RevocationEndpoint
+	revokeEndpoint := c.discoveryAPI.RevocationEndpoint
 	request, err := http.NewRequest("POST", revokeEndpoint, bytes.NewBufferString(data.Encode()))
 	if err != nil {
 		log.Fatalln(err)
@@ -114,6 +117,7 @@ func (c *AuthClient) RevokeToken(refreshToken string) {
 	responseData, _ := json.Marshal(responseString)
 	log.Println(responseData)
 	log.Println("Exiting RevokeToken ")
+	c.Client = nil
 }
 
 func getBearerTokenResponse(body []byte) (*BearerToken, error) {
@@ -125,7 +129,16 @@ func getBearerTokenResponse(body []byte) (*BearerToken, error) {
 	return s, err
 }
 
-func basicAuth(c *AuthClient) string {
-	auth := c.ClientId + ":" + c.ClientSecret
+func basicAuth(c *Client) string {
+	auth := c.clientId + ":" + c.clientSecret
 	return base64.StdEncoding.EncodeToString([]byte(auth))
+}
+
+func getHttpClient(bearerToken *BearerToken) *http.Client {
+	ctx := context.Background()
+	token := oauth2.Token{
+		AccessToken: bearerToken.AccessToken,
+		TokenType:   "Bearer",
+	}
+	return oauth2.NewClient(ctx, oauth2.StaticTokenSource(&token))
 }
