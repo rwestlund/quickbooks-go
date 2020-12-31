@@ -34,8 +34,32 @@ type Client struct {
 	Client *http.Client
 	// Set to ProductionEndpoint or SandboxEndpoint.
 	Endpoint EndpointURL
+	// The set of quickbooks APIs
+	discoveryAPI *DiscoveryAPI
+	// The client ID
+	clientId string
+	// The client Secret
+	clientSecret string
 	// The account ID you're connecting to.
 	RealmID string
+}
+
+func NewQuickbooksClient(clientId string, clientSecret string, realmID string, isProduction bool, token *BearerToken) (c *Client, err error) {
+	var client Client
+	client.clientId = clientId
+	client.clientSecret = clientSecret
+	client.RealmID = realmID
+	if isProduction {
+		client.Endpoint = ProductionEndpoint
+		client.discoveryAPI = CallDiscoveryAPI(DiscoveryProductionEndpoint)
+	} else {
+		client.Endpoint = SandboxEndpoint
+		client.discoveryAPI = CallDiscoveryAPI(DiscoverySandboxEndpoint)
+	}
+	if token != nil {
+		client.Client = getHttpClient(token)
+	}
+	return &client, nil
 }
 
 // FetchCompanyInfo returns the QuickBooks CompanyInfo object. This is a good
