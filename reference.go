@@ -7,4 +7,5 @@ package quickbooks
 type ReferenceType struct {
 	Value string `json:"value,omitempty"`
 	Name  string `json:"name,omitempty"`
+	Type  string `json:"type,omitempty"`
 }
