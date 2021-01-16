@@ -2,7 +2,7 @@ package examples
 
 import (
 	"fmt"
-	"github.com/rwestlund/quickbooks-go"
+	"github.com/nsotgui/quickbooks-go"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
