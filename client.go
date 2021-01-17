@@ -24,8 +24,13 @@ package quickbooks
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 	"net/url"
+)
+
+const (
+	AccountingScope = "com.intuit.quickbooks.accounting"
 )
 
 // Client is your handle to the QuickBooks API.
@@ -60,6 +65,28 @@ func NewQuickbooksClient(clientId string, clientSecret string, realmID string, i
 		client.Client = getHttpClient(token)
 	}
 	return &client, nil
+}
+
+// GetAuthorizationUrl Get the authorization Url
+func (c *Client) GetAuthorizationUrl(scope string, csrf string, redirectUri string) string {
+	var Url *url.URL
+
+	authorizationEndpoint := c.discoveryAPI.AuthorizationEndpoint
+	Url, err := url.Parse(authorizationEndpoint)
+	if err != nil {
+		log.Println("error parsing url")
+	}
+
+	parameters := url.Values{}
+	parameters.Add("client_id", c.clientId)
+	parameters.Add("response_type", "code")
+	parameters.Add("scope", scope)
+	parameters.Add("redirect_uri", redirectUri)
+	parameters.Add("state", csrf)
+	Url.RawQuery = parameters.Encode()
+
+	log.Printf("Encoded URL is %q\n", Url.String())
+	return Url.String()
 }
 
 // FetchCompanyInfo returns the QuickBooks CompanyInfo object. This is a good
