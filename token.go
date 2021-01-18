@@ -5,9 +5,9 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"golang.org/x/oauth2"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 )
@@ -26,7 +26,6 @@ type BearerToken struct {
 // This method can only be called once
 //
 func (c *Client) RetrieveBearerToken(authorizationCode string) (*BearerToken, error) {
-	log.Println("Entering RetrieveBearerToken ")
 	client := &http.Client{}
 	data := url.Values{}
 	//set parameters
@@ -36,7 +35,7 @@ func (c *Client) RetrieveBearerToken(authorizationCode string) (*BearerToken, er
 
 	request, err := http.NewRequest("POST", string(c.discoveryAPI.TokenEndpoint), bytes.NewBufferString(data.Encode()))
 	if err != nil {
-		log.Fatalln(err)
+		return nil, err
 	}
 	//set headers
 	request.Header.Set("accept", "application/json")
@@ -47,11 +46,14 @@ func (c *Client) RetrieveBearerToken(authorizationCode string) (*BearerToken, er
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatalln(err)
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.New(string(body))
 	}
 
 	bearerTokenResponse, err := getBearerTokenResponse([]byte(body))
-	log.Println("Exiting RetrieveBearerToken")
 	return bearerTokenResponse, err
 }
 
@@ -59,8 +61,6 @@ func (c *Client) RetrieveBearerToken(authorizationCode string) (*BearerToken, er
 // Call the refresh endpoint to generate new tokens
 //
 func (c *Client) RefreshToken(refreshToken string) (*BearerToken, error) {
-
-	log.Println("Entering RefreshToken ")
 	client := &http.Client{}
 	data := url.Values{}
 
@@ -70,7 +70,7 @@ func (c *Client) RefreshToken(refreshToken string) (*BearerToken, error) {
 
 	request, err := http.NewRequest("POST", string(c.discoveryAPI.TokenEndpoint), bytes.NewBufferString(data.Encode()))
 	if err != nil {
-		log.Fatalln(err)
+		return nil, err
 	}
 	//set the headers
 	request.Header.Set("accept", "application/json")
@@ -81,10 +81,14 @@ func (c *Client) RefreshToken(refreshToken string) (*BearerToken, error) {
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatalln(err)
+		return nil, err
 	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.New(string(body))
+	}
+
 	bearerTokenResponse, err := getBearerTokenResponse([]byte(body))
-	log.Println("Exiting RefreshToken ")
 	c.Client = getHttpClient(bearerTokenResponse)
 	return bearerTokenResponse, err
 }
@@ -92,8 +96,7 @@ func (c *Client) RefreshToken(refreshToken string) (*BearerToken, error) {
 //
 // Call the revoke endpoint to revoke tokens
 //
-func (c *Client) RevokeToken(refreshToken string) {
-	log.Println("Entering RevokeToken ")
+func (c *Client) RevokeToken(refreshToken string) error {
 	client := &http.Client{}
 	data := url.Values{}
 
@@ -103,7 +106,7 @@ func (c *Client) RevokeToken(refreshToken string) {
 	revokeEndpoint := c.discoveryAPI.RevocationEndpoint
 	request, err := http.NewRequest("POST", revokeEndpoint, bytes.NewBufferString(data.Encode()))
 	if err != nil {
-		log.Fatalln(err)
+		return err
 	}
 	//set headers
 	request.Header.Set("accept", "application/json")
@@ -112,19 +115,24 @@ func (c *Client) RevokeToken(refreshToken string) {
 
 	resp, err := client.Do(request)
 	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
 
-	responseString := map[string]string{"response": "Revoke successful"}
-	responseData, _ := json.Marshal(responseString)
-	log.Println(responseData)
-	log.Println("Exiting RevokeToken ")
+	if resp.StatusCode != http.StatusOK {
+		return errors.New(string(body))
+	}
+
 	c.Client = nil
+	return nil
 }
 
 func getBearerTokenResponse(body []byte) (*BearerToken, error) {
 	var s = new(BearerToken)
 	err := json.Unmarshal(body, &s)
 	if err != nil {
-		log.Fatalln("error getting BearerTokenResponse:", err)
+		return nil, errors.New(string(body))
 	}
 	return s, err
 }
