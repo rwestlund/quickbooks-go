@@ -80,6 +80,24 @@ func (c Customer) GetPrimaryEmail() string {
 	return ""
 }
 
+type CustomerQueryResponse struct {
+	Customer      []Customer
+	StartPosition int
+	MaxResults    int
+}
+
+// QueryCustomer gets the vendor
+func (c *Client) QueryCustomer(selectStatement string) (CustomerQueryResponse, error) {
+	var r struct {
+		QueryResponse CustomerQueryResponse
+	}
+	err := c.query(selectStatement, &r)
+	if err != nil {
+		return CustomerQueryResponse{}, err
+	}
+	return r.QueryResponse, nil
+}
+
 // FetchCustomers gets the full list of Customers in the QuickBooks account.
 func (c *Client) FetchCustomers() ([]Customer, error) {
 
@@ -111,26 +129,18 @@ func (c *Client) FetchCustomers() ([]Customer, error) {
 
 // Fetch one page of results, because we can't get them all in one query.
 func (c *Client) fetchCustomerPage(startpos int) ([]Customer, error) {
-
-	var r struct {
-		QueryResponse struct {
-			Customer      []Customer
-			StartPosition int
-			MaxResults    int
-		}
-	}
 	q := "SELECT * FROM Customer ORDERBY Id STARTPOSITION " +
 		strconv.Itoa(startpos) + " MAXRESULTS " + strconv.Itoa(queryPageSize)
-	err := c.query(q, &r)
+	resp, err := c.QueryCustomer(q)
 	if err != nil {
 		return nil, err
 	}
 
 	// Make sure we don't return nil if there are no customers.
-	if r.QueryResponse.Customer == nil {
-		r.QueryResponse.Customer = make([]Customer, 0)
+	if resp.Customer == nil {
+		resp.Customer = make([]Customer, 0)
 	}
-	return r.QueryResponse.Customer, nil
+	return resp.Customer, nil
 }
 
 // FetchCustomerByID returns a customer with a given ID.
