@@ -6,9 +6,6 @@
 quickbooks-go is a Go library that provides access to Intuit's QuickBooks
 Online API.
 
-**NOTE:** This library is very incomplete. I just implemented the minimum for my
-use case. Pull requests welcome :)
-
 # Example
 
 ## Authorization flow
