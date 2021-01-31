@@ -31,7 +31,7 @@ func TestJournalEntryJSON(t *testing.T) {
 		log.Fatal("When decoding JSON file: ", err)
 	}
 	assert.Equal(t, "0", r.JournalEntry.SyncToken)
-	assert.Equal(t, "2015-07-27T00:00:00+00:00", r.JournalEntry.TxnDate.String())
+	assert.Equal(t, "2015-06-29T00:00:00+00:00", r.JournalEntry.TxnDate.String())
 	assert.False(t, r.JournalEntry.Adjustment)
 	assert.Equal(t, "227", r.JournalEntry.ID)
 	assert.Equal(t, "2015-06-29T12:33:57-07:00", r.JournalEntry.MetaData.CreateTime.String())
