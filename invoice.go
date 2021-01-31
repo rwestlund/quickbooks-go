@@ -62,6 +62,27 @@ type TxnTaxDetail struct {
 	TaxLine       []Line        `json:",omitempty"`
 }
 
+const (
+	PostingTypeCredit         = "Credit"
+	PostingTypeDebit          = "Debit"
+	BillableStatusBillable    = "Billable"
+	BillableStatusNotBillable = "NotBillable"
+	BillableStatus            = "HasBeenBilled"
+)
+
+type JournalEntryLineDetail struct {
+	JournalCodeRef  ReferenceType `json:",omitempty"`
+	PostingType     string        `json:",omitempty"`
+	AccountRef      ReferenceType `json:",omitempty"`
+	TaxApplicableOn string        `json:",omitempty"`
+	TaxInclusiveAmt json.Number   `json:",omitempty"`
+	ClassRef        ReferenceType `json:",omitempty"`
+	DepartmentRef   ReferenceType `json:",omitempty"`
+	TaxCodeRef      ReferenceType `json:",omitempty"`
+	BillableStatus  string        `json:",omitempty"`
+	Entity          ReferenceType `json:",omitempty"`
+}
+
 // AccountBasedExpenseLineDetail
 type AccountBasedExpenseLineDetail struct {
 	AccountRef ReferenceType
@@ -81,10 +102,11 @@ type Line struct {
 	Description                   string `json:",omitempty"`
 	Amount                        json.Number
 	DetailType                    string
-	AccountBasedExpenseLineDetail AccountBasedExpenseLineDetail
-	SalesItemLineDetail           SalesItemLineDetail `json:",omitempty"`
-	DiscountLineDetail            DiscountLineDetail  `json:",omitempty"`
-	TaxLineDetail                 TaxLineDetail       `json:",omitempty"`
+	AccountBasedExpenseLineDetail AccountBasedExpenseLineDetail `json:",omitempty"`
+	JournalEntryLineDetail        JournalEntryLineDetail        `json:",omitempty"`
+	SalesItemLineDetail           SalesItemLineDetail           `json:",omitempty"`
+	DiscountLineDetail            DiscountLineDetail            `json:",omitempty"`
+	TaxLineDetail                 TaxLineDetail                 `json:",omitempty"`
 }
 
 // TaxLineDetail ...
