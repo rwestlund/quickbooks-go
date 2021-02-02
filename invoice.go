@@ -62,6 +62,11 @@ type TxnTaxDetail struct {
 	TaxLine       []Line        `json:",omitempty"`
 }
 
+type Entity struct {
+	Type      string        `json:",omitempty"`
+	EntityRef ReferenceType `json:",omitempty"`
+}
+
 const (
 	PostingTypeCredit         = "Credit"
 	PostingTypeDebit          = "Debit"
@@ -80,7 +85,7 @@ type JournalEntryLineDetail struct {
 	DepartmentRef   ReferenceType `json:",omitempty"`
 	TaxCodeRef      ReferenceType `json:",omitempty"`
 	BillableStatus  string        `json:",omitempty"`
-	Entity          ReferenceType `json:",omitempty"`
+	Entity          Entity        `json:",omitempty"`
 }
 
 // AccountBasedExpenseLineDetail
