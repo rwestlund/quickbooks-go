@@ -25,14 +25,14 @@ type BearerToken struct {
 // Method to retrieve access token (bearer token)
 // This method can only be called once
 //
-func (c *Client) RetrieveBearerToken(authorizationCode string) (*BearerToken, error) {
+func (c *Client) RetrieveBearerToken(authorizationCode string, redirectURI string) (*BearerToken, error) {
 	log.Println("Entering RetrieveBearerToken ")
 	client := &http.Client{}
 	data := url.Values{}
 	//set parameters
 	data.Set("grant_type", "authorization_code")
 	data.Add("code", authorizationCode)
-	data.Add("redirect_uri", "https://developer.intuit.com/v2/OAuth2Playground/RedirectUrl")
+	data.Add("redirect_uri", redirectURI)
 
 	request, err := http.NewRequest("POST", string(c.discoveryAPI.TokenEndpoint), bytes.NewBufferString(data.Encode()))
 	if err != nil {
