@@ -43,8 +43,8 @@ type Customer struct {
 	Notes                string           `json:",omitempty"`
 	Job                  null.Bool        `json:",omitempty"`
 	BillWithParent       bool             `json:",omitempty"`
-	//ParentRef
-	Level int `json:",omitempty"`
+	ParentRef            ReferenceType    `json:",omitempty"`
+	Level                int              `json:",omitempty"`
 	//SalesTermRef
 	//PaymentMethodRef
 	Balance         json.Number `json:",omitempty"`
