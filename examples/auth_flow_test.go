@@ -15,6 +15,9 @@ func TestAuthorizationFlow(t *testing.T) {
 	qbClient, err := quickbooks.NewQuickbooksClient(clientId, clientSecret, realmId, false, nil)
 	require.NoError(t, err)
 
+	// Get the authorization url
+	qbClient.GetAuthorizationUrl(quickbooks.AccountingScope, "random-string", "https://localhost/redirect_uri")
+
 	// To do first when you receive the authorization code from quickbooks callback
 	authorizationCode := "<received-from-callback>"
 	bearerToken, err := qbClient.RetrieveBearerToken(authorizationCode)
