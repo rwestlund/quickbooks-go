@@ -23,7 +23,8 @@ qbClient, _ := quickbooks.NewQuickbooksClient(clientId, clientSecret, realmId, f
 
 // To do first when you receive the authorization code from quickbooks callback
 authorizationCode := "<received-from-callback>"
-bearerToken, _ := qbClient.RetrieveBearerToken(authorizationCode)
+redirectURI := "https://developer.intuit.com/v2/OAuth2Playground/RedirectUrl"
+bearerToken, _ := qbClient.RetrieveBearerToken(authorizationCode, redirectURI)
 // Save the bearer token inside a db
 
 // When the token expire, you can use the following function
