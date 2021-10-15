@@ -17,7 +17,8 @@ func TestAuthorizationFlow(t *testing.T) {
 
 	// To do first when you receive the authorization code from quickbooks callback
 	authorizationCode := "<received-from-callback>"
-	bearerToken, err := qbClient.RetrieveBearerToken(authorizationCode)
+	redirectURI := "https://developer.intuit.com/v2/OAuth2Playground/RedirectUrl"
+	bearerToken, err := qbClient.RetrieveBearerToken(authorizationCode, redirectURI)
 	require.NoError(t, err)
 	// Save the bearer token inside a db
 
