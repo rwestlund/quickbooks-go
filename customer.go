@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 
 	null "gopkg.in/guregu/null.v4"
 )
@@ -78,6 +79,32 @@ func (c Customer) GetPrimaryEmail() string {
 		return c.PrimaryEmailAddr.Address
 	}
 	return ""
+}
+
+// QueryCustomerByName gets a customer with a given name.
+func (c *Client) QueryCustomerByName(name string) (*Customer, error) {
+
+	var r struct {
+		QueryResponse struct {
+			Customer []Customer
+			TotalCount int
+		}
+	}
+	err := c.query("SELECT * FROM Customer WHERE DisplayName = '"+
+		strings.Replace(name, "'", "''", -1)+"'", &r)
+	if err != nil {
+		return nil, err
+	}
+
+	// var customers = make([]Customer, 0, r.QueryResponse.TotalCount)
+	// for i := 0; i < r.QueryResponse.TotalCount; i += queryPageSize {
+		// var page, err = c.fetchCustomerPage(i + 1)
+		// if err != nil {
+			// return nil, err
+		// }
+		// customers = append(customers, page...)
+	// }
+	return &r.QueryResponse.Customer[0], nil
 }
 
 // FetchCustomers gets the full list of Customers in the QuickBooks account.
