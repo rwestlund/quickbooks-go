@@ -1,0 +1,54 @@
+{
+	"Purchase": {
+		"SyncToken": "0",
+		"domain": "QBO",
+		"PurchaseEx": {
+			"any": [
+				{
+					"name": "{http://schema.intuit.com/finance/v3}NameValue",
+					"nil": false,
+					"value": {
+						"Name": "TxnType",
+						"Value": "54"
+					},
+					"declaredType": "com.intuit.schema.finance.v3.NameValue",
+					"scope": "javax.xml.bind.JAXBElement$GlobalScope",
+					"globalScope": true,
+					"typeSubstituted": false
+				}
+			]
+		},
+		"TxnDate": "2015-07-27",
+		"TotalAmt": 10.0,
+		"PaymentType": "Cash",
+		"sparse": false,
+		"Line": [
+			{
+				"DetailType": "AccountBasedExpenseLineDetail",
+				"Amount": 10.0,
+				"Id": "1",
+				"AccountBasedExpenseLineDetail": {
+					"TaxCodeRef": {
+						"value": "NON"
+					},
+					"AccountRef": {
+						"name": "Meals and Entertainment",
+						"value": "13"
+					},
+					"BillableStatus": "NotBillable"
+				}
+			}
+		],
+		"AccountRef": {
+			"name": "Checking",
+			"value": "35"
+		},
+		"CustomField": [],
+		"Id": "252",
+		"MetaData": {
+			"CreateTime": "2015-07-27T10:37:26-07:00",
+			"LastUpdatedTime": "2015-07-27T10:37:26-07:00"
+		}
+	},
+	"time": "2015-07-27T10:39:33.171-07:00"
+}

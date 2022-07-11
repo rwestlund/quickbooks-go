@@ -46,27 +46,37 @@ type Vendor struct {
 	Balance             json.Number      `json:",omitempty"`
 }
 
+type VendorQueryResponse struct {
+	Vendor        []Vendor
+	StartPosition int
+	MaxResults    int
+}
+
+// QueryVendor gets the vendor
+func (c *Client) QueryVendor(selectStatement string) (VendorQueryResponse, error) {
+	var r struct {
+		QueryResponse VendorQueryResponse
+	}
+	err := c.query(selectStatement, &r)
+	if err != nil {
+		return VendorQueryResponse{}, err
+	}
+	return r.QueryResponse, nil
+}
+
 // GetVendors gets the vendors
 func (c *Client) GetVendors(startpos int) ([]Vendor, error) {
-
-	var r struct {
-		QueryResponse struct {
-			Vendor        []Vendor
-			StartPosition int
-			MaxResults    int
-		}
-	}
 	q := "SELECT * FROM Vendor ORDERBY Id STARTPOSITION " +
 		strconv.Itoa(startpos) + " MAXRESULTS " + strconv.Itoa(queryPageSize)
-	err := c.query(q, &r)
+	resp, err := c.QueryVendor(q)
 	if err != nil {
 		return nil, err
 	}
 
-	if r.QueryResponse.Vendor == nil {
-		r.QueryResponse.Vendor = make([]Vendor, 0)
+	if resp.Vendor == nil {
+		resp.Vendor = make([]Vendor, 0)
 	}
-	return r.QueryResponse.Vendor, nil
+	return resp.Vendor, nil
 }
 
 // CreateVendor creates the vendor

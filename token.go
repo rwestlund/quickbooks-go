@@ -6,10 +6,11 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"golang.org/x/oauth2"
 	"io/ioutil"
 	"net/http"
 	"net/url"
+
+	"golang.org/x/oauth2"
 )
 
 type BearerToken struct {
@@ -25,7 +26,7 @@ type BearerToken struct {
 // Method to retrieve access token (bearer token)
 // This method can only be called once
 //
-func (c *Client) RetrieveBearerToken(authorizationCode, redirectURI string) (*BearerToken, error) {
+func (c *Client) RetrieveBearerToken(authorizationCode string, redirectURI string) (*BearerToken, error) {
 	client := &http.Client{}
 	data := url.Values{}
 	//set parameters

@@ -1,0 +1,44 @@
+{
+	"time": "2015-06-29T12:43:42.132-07:00",
+	"JournalEntry": {
+		"SyncToken": "0",
+		"domain": "QBO",
+		"TxnDate": "2015-06-29",
+		"sparse": false,
+		"Line": [
+			{
+				"JournalEntryLineDetail": {
+					"PostingType": "Debit",
+					"AccountRef": {
+						"name": "Job Expenses:Job Materials:Fountain and Garden Lighting",
+						"value": "65"
+					}
+				},
+				"DetailType": "JournalEntryLineDetail",
+				"Amount": 25.54,
+				"Id": "0",
+				"Description": "Four sprinkler heads damaged"
+			},
+			{
+				"JournalEntryLineDetail": {
+					"PostingType": "Credit",
+					"AccountRef": {
+						"name": "Notes Payable",
+						"value": "44"
+					}
+				},
+				"DetailType": "JournalEntryLineDetail",
+				"Amount": 25.54,
+				"Id": "1",
+				"Description": "Sprinkler Hds - Sprinkler Hds Inventory Adjustment"
+			}
+		],
+		"Adjustment": false,
+		"Id": "227",
+		"TxnTaxDetail": {},
+		"MetaData": {
+			"CreateTime": "2015-06-29T12:33:57-07:00",
+			"LastUpdatedTime": "2015-06-29T12:33:57-07:00"
+		}
+	}
+}

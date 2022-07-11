@@ -8,43 +8,37 @@ import (
 	"strconv"
 )
 
-type Bill struct {
-	ID           string        `json:"Id,omitempty"`
-	VendorRef    ReferenceType `json:",omitempty"`
-	Line         []Line
-	SyncToken    string        `json:",omitempty"`
-	CurrencyRef  ReferenceType `json:",omitempty"`
-	TxnDate      Date          `json:",omitempty"`
-	APAccountRef ReferenceType `json:",omitempty"`
-	SalesTermRef ReferenceType `json:",omitempty"`
-	//LinkedTxn
+type JournalEntry struct {
+	ID                      string         `json:"Id,omitempty"`
+	Line                    []Line         `json:",omitempty"`
+	SyncToken               string         `json:",omitempty"`
+	CurrencyRef             ReferenceType  `json:",omitempty"`
+	DocNumber               string         `json:",omitempty"`
+	PrivateNote             string         `json:",omitempty"`
+	TxnDate                 Date           `json:",omitempty"`
+	ExchangeRate            json.Number    `json:",omitempty"`
+	TaxRateRef              *ReferenceType `json:",omitempty"`
+	TransactionLocationType string         `json:",omitempty"`
+	TxnTaxDetail            TxnTaxDetail   `json:",omitempty"`
 	//GlobalTaxCalculation
-	TotalAmt                json.Number `json:",omitempty"`
-	TransactionLocationType string      `json:",omitempty"`
-	DueDate                 Date        `json:",omitempty"`
-	MetaData                MetaData    `json:",omitempty"`
-	DocNumber               string
-	PrivateNote             string        `json:",omitempty"`
-	TxnTaxDetail            TxnTaxDetail  `json:",omitempty"`
-	ExchangeRate            json.Number   `json:",omitempty"`
-	DepartmentRef           ReferenceType `json:",omitempty"`
-	IncludeInAnnualTPAR     bool          `json:",omitempty"`
-	HomeBalance             json.Number   `json:",omitempty"`
-	RecurDataRef            ReferenceType `json:",omitempty"`
-	Balance                 json.Number   `json:",omitempty"`
+	Adjustment   bool          `json:",omitempty"`
+	MetaData     MetaData      `json:",omitempty"`
+	RecurDataRef ReferenceType `json:",omitempty"`
+	TotalAmt     json.Number   `json:",omitempty"`
 }
 
-func (c *Client) CreateBill(bill *Bill) (*Bill, error) {
+// CreateJournalEntry creates the journalEntry
+func (c *Client) CreateJournalEntry(journalEntry *JournalEntry) (*JournalEntry, error) {
 	var u, err = url.Parse(string(c.Endpoint))
 	if err != nil {
 		return nil, err
 	}
-	u.Path = "/v3/company/" + c.RealmID + "/bill"
+	u.Path = "/v3/company/" + c.RealmID + "/journalentry"
 	var v = url.Values{}
 	v.Add("minorversion", minorVersion)
 	u.RawQuery = v.Encode()
 	var j []byte
-	j, err = json.Marshal(bill)
+	j, err = json.Marshal(journalEntry)
 	if err != nil {
 		return nil, err
 	}
@@ -67,18 +61,18 @@ func (c *Client) CreateBill(bill *Bill) (*Bill, error) {
 	}
 
 	var r struct {
-		Bill Bill
-		Time Date
+		JournalEntry JournalEntry
+		Time         Date
 	}
 	err = json.NewDecoder(res.Body).Decode(&r)
-	return &r.Bill, err
+	return &r.JournalEntry, err
 }
 
-// QueryBill gets the bill
-func (c *Client) QueryBill(selectStatement string) ([]Bill, error) {
+// QueryJournalEntry gets the journalEntry
+func (c *Client) QueryJournalEntry(selectStatement string) ([]JournalEntry, error) {
 	var r struct {
 		QueryResponse struct {
-			Bill          []Bill
+			JournalEntry  []JournalEntry
 			StartPosition int
 			MaxResults    int
 		}
@@ -88,26 +82,26 @@ func (c *Client) QueryBill(selectStatement string) ([]Bill, error) {
 		return nil, err
 	}
 
-	if r.QueryResponse.Bill == nil {
-		r.QueryResponse.Bill = make([]Bill, 0)
+	if r.QueryResponse.JournalEntry == nil {
+		r.QueryResponse.JournalEntry = make([]JournalEntry, 0)
 	}
-	return r.QueryResponse.Bill, nil
+	return r.QueryResponse.JournalEntry, nil
 }
 
-// GetBills gets the bills
-func (c *Client) GetBills(startpos int, pagesize int) ([]Bill, error) {
-	q := "SELECT * FROM Bill ORDERBY Id STARTPOSITION " +
+// GetJournalEntrys gets the journalEntry
+func (c *Client) GetJournalEntrys(startpos int, pagesize int) ([]JournalEntry, error) {
+	q := "SELECT * FROM JournalEntry ORDERBY Id STARTPOSITION " +
 		strconv.Itoa(startpos) + " MAXRESULTS " + strconv.Itoa(pagesize)
-	return c.QueryBill(q)
+	return c.QueryJournalEntry(q)
 }
 
-// GetBillByID returns a bill with a given ID.
-func (c *Client) GetBillByID(id string) (*Bill, error) {
+// GetJournalEntryByID returns an journalEntry with a given ID.
+func (c *Client) GetJournalEntryByID(id string) (*JournalEntry, error) {
 	var u, err = url.Parse(string(c.Endpoint))
 	if err != nil {
 		return nil, err
 	}
-	u.Path = "/v3/company/" + c.RealmID + "/bill/" + id
+	u.Path = "/v3/company/" + c.RealmID + "/journalentry/" + id
 	var v = url.Values{}
 	v.Add("minorversion", minorVersion)
 	u.RawQuery = v.Encode()
@@ -127,29 +121,29 @@ func (c *Client) GetBillByID(id string) (*Bill, error) {
 		return nil, parseFailure(res)
 	}
 	var r struct {
-		Bill Bill
-		Time Date
+		JournalEntry JournalEntry
+		Time         Date
 	}
 	err = json.NewDecoder(res.Body).Decode(&r)
-	return &r.Bill, err
+	return &r.JournalEntry, err
 }
 
-// UpdateBill updates the bill
-func (c *Client) UpdateBill(bill *Bill) (*Bill, error) {
+// UpdateJournalEntry updates the journalEntry
+func (c *Client) UpdateJournalEntry(journalEntry *JournalEntry) (*JournalEntry, error) {
 	var u, err = url.Parse(string(c.Endpoint))
 	if err != nil {
 		return nil, err
 	}
-	u.Path = "/v3/company/" + c.RealmID + "/bill"
+	u.Path = "/v3/company/" + c.RealmID + "/journalentry"
 	var v = url.Values{}
 	v.Add("minorversion", minorVersion)
 	u.RawQuery = v.Encode()
 	var d = struct {
-		*Bill
+		*JournalEntry
 		Sparse bool `json:"sparse"`
 	}{
-		Bill:   bill,
-		Sparse: true,
+		JournalEntry: journalEntry,
+		Sparse:       true,
 	}
 	var j []byte
 	j, err = json.Marshal(d)
@@ -175,9 +169,9 @@ func (c *Client) UpdateBill(bill *Bill) (*Bill, error) {
 	}
 
 	var r struct {
-		Bill Bill
-		Time Date
+		JournalEntry JournalEntry
+		Time         Date
 	}
 	err = json.NewDecoder(res.Body).Decode(&r)
-	return &r.Bill, err
+	return &r.JournalEntry, err
 }

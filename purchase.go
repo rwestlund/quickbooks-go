@@ -8,43 +8,52 @@ import (
 	"strconv"
 )
 
-type Bill struct {
-	ID           string        `json:"Id,omitempty"`
-	VendorRef    ReferenceType `json:",omitempty"`
-	Line         []Line
-	SyncToken    string        `json:",omitempty"`
-	CurrencyRef  ReferenceType `json:",omitempty"`
-	TxnDate      Date          `json:",omitempty"`
-	APAccountRef ReferenceType `json:",omitempty"`
-	SalesTermRef ReferenceType `json:",omitempty"`
+const (
+	PaymentTypeCash       = "Cash"
+	PaymentTypeCheck      = "Check"
+	PaymentTypeCreditCard = "CreditCard"
+)
+
+type Purchase struct {
+	ID          string `json:"Id,omitempty"`
+	Line        []Line
+	PaymentType string           `json:",omitempty"`
+	AccountRef  ReferenceType    `json:",omitempty"`
+	SyncToken   string           `json:",omitempty"`
+	CurrencyRef ReferenceType    `json:",omitempty"`
+	TxnDate     Date             `json:",omitempty"`
+	PrintStatus string           `json:",omitempty"`
+	RemitToAddr *PhysicalAddress `json:",omitempty"`
+	TxnSource   string           `json:",omitempty"`
 	//LinkedTxn
 	//GlobalTaxCalculation
-	TotalAmt                json.Number `json:",omitempty"`
-	TransactionLocationType string      `json:",omitempty"`
-	DueDate                 Date        `json:",omitempty"`
-	MetaData                MetaData    `json:",omitempty"`
-	DocNumber               string
+	TransactionLocationType string        `json:",omitempty"`
+	MetaData                MetaData      `json:",omitempty"`
+	DocNumber               string        `json:",omitempty"`
 	PrivateNote             string        `json:",omitempty"`
+	Credit                  bool          `json:",omitempty"`
 	TxnTaxDetail            TxnTaxDetail  `json:",omitempty"`
+	PaymentMethodRef        ReferenceType `json:",omitempty"`
 	ExchangeRate            json.Number   `json:",omitempty"`
 	DepartmentRef           ReferenceType `json:",omitempty"`
+	EntityRef               ReferenceType `json:",omitempty"`
 	IncludeInAnnualTPAR     bool          `json:",omitempty"`
-	HomeBalance             json.Number   `json:",omitempty"`
+	TotalAmt                json.Number   `json:",omitempty"`
 	RecurDataRef            ReferenceType `json:",omitempty"`
-	Balance                 json.Number   `json:",omitempty"`
 }
 
-func (c *Client) CreateBill(bill *Bill) (*Bill, error) {
+// CreatePurchase creates the purchase
+func (c *Client) CreatePurchase(purchase *Purchase) (*Purchase, error) {
 	var u, err = url.Parse(string(c.Endpoint))
 	if err != nil {
 		return nil, err
 	}
-	u.Path = "/v3/company/" + c.RealmID + "/bill"
+	u.Path = "/v3/company/" + c.RealmID + "/purchase"
 	var v = url.Values{}
 	v.Add("minorversion", minorVersion)
 	u.RawQuery = v.Encode()
 	var j []byte
-	j, err = json.Marshal(bill)
+	j, err = json.Marshal(purchase)
 	if err != nil {
 		return nil, err
 	}
@@ -67,18 +76,18 @@ func (c *Client) CreateBill(bill *Bill) (*Bill, error) {
 	}
 
 	var r struct {
-		Bill Bill
-		Time Date
+		Purchase Purchase
+		Time     Date
 	}
 	err = json.NewDecoder(res.Body).Decode(&r)
-	return &r.Bill, err
+	return &r.Purchase, err
 }
 
-// QueryBill gets the bill
-func (c *Client) QueryBill(selectStatement string) ([]Bill, error) {
+// QueryPurchase gets the purchase
+func (c *Client) QueryPurchase(selectStatement string) ([]Purchase, error) {
 	var r struct {
 		QueryResponse struct {
-			Bill          []Bill
+			Purchase      []Purchase
 			StartPosition int
 			MaxResults    int
 		}
@@ -88,26 +97,26 @@ func (c *Client) QueryBill(selectStatement string) ([]Bill, error) {
 		return nil, err
 	}
 
-	if r.QueryResponse.Bill == nil {
-		r.QueryResponse.Bill = make([]Bill, 0)
+	if r.QueryResponse.Purchase == nil {
+		r.QueryResponse.Purchase = make([]Purchase, 0)
 	}
-	return r.QueryResponse.Bill, nil
+	return r.QueryResponse.Purchase, nil
 }
 
-// GetBills gets the bills
-func (c *Client) GetBills(startpos int, pagesize int) ([]Bill, error) {
-	q := "SELECT * FROM Bill ORDERBY Id STARTPOSITION " +
+// GetPurchases gets the purchase
+func (c *Client) GetPurchases(startpos int, pagesize int) ([]Purchase, error) {
+	q := "SELECT * FROM Purchase ORDERBY Id STARTPOSITION " +
 		strconv.Itoa(startpos) + " MAXRESULTS " + strconv.Itoa(pagesize)
-	return c.QueryBill(q)
+	return c.QueryPurchase(q)
 }
 
-// GetBillByID returns a bill with a given ID.
-func (c *Client) GetBillByID(id string) (*Bill, error) {
+// GetPurchaseByID returns an purchase with a given ID.
+func (c *Client) GetPurchaseByID(id string) (*Purchase, error) {
 	var u, err = url.Parse(string(c.Endpoint))
 	if err != nil {
 		return nil, err
 	}
-	u.Path = "/v3/company/" + c.RealmID + "/bill/" + id
+	u.Path = "/v3/company/" + c.RealmID + "/purchase/" + id
 	var v = url.Values{}
 	v.Add("minorversion", minorVersion)
 	u.RawQuery = v.Encode()
@@ -127,29 +136,29 @@ func (c *Client) GetBillByID(id string) (*Bill, error) {
 		return nil, parseFailure(res)
 	}
 	var r struct {
-		Bill Bill
-		Time Date
+		Purchase Purchase
+		Time     Date
 	}
 	err = json.NewDecoder(res.Body).Decode(&r)
-	return &r.Bill, err
+	return &r.Purchase, err
 }
 
-// UpdateBill updates the bill
-func (c *Client) UpdateBill(bill *Bill) (*Bill, error) {
+// UpdatePurchase updates the purchase
+func (c *Client) UpdatePurchase(purchase *Purchase) (*Purchase, error) {
 	var u, err = url.Parse(string(c.Endpoint))
 	if err != nil {
 		return nil, err
 	}
-	u.Path = "/v3/company/" + c.RealmID + "/bill"
+	u.Path = "/v3/company/" + c.RealmID + "/purchase"
 	var v = url.Values{}
 	v.Add("minorversion", minorVersion)
 	u.RawQuery = v.Encode()
 	var d = struct {
-		*Bill
+		*Purchase
 		Sparse bool `json:"sparse"`
 	}{
-		Bill:   bill,
-		Sparse: true,
+		Purchase: purchase,
+		Sparse:   true,
 	}
 	var j []byte
 	j, err = json.Marshal(d)
@@ -175,9 +184,9 @@ func (c *Client) UpdateBill(bill *Bill) (*Bill, error) {
 	}
 
 	var r struct {
-		Bill Bill
-		Time Date
+		Purchase Purchase
+		Time     Date
 	}
 	err = json.NewDecoder(res.Body).Decode(&r)
-	return &r.Bill, err
+	return &r.Purchase, err
 }
