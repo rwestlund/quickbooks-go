@@ -2,9 +2,10 @@ package examples
 
 import (
 	"fmt"
-	"github.com/nsotgui/quickbooks-go"
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/rwestlund/quickbooks-go"
+	"github.com/stretchr/testify/require"
 )
 
 func TestAuthorizationFlow(t *testing.T) {

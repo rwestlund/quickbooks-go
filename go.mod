@@ -1,4 +1,5 @@
-module github.com/nsotgui/quickbooks-go
+module github.com/rwestlund/quickbooks-go
+
 
 go 1.14
 
