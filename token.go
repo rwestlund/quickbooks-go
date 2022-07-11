@@ -44,6 +44,10 @@ func (c *Client) RetrieveBearerToken(authorizationCode string, redirectURI strin
 	request.Header.Set("Authorization", "Basic "+basicAuth(c))
 
 	resp, err := client.Do(request)
+	if err != nil {
+		return nil, err
+	}
+
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -79,6 +83,10 @@ func (c *Client) RefreshToken(refreshToken string) (*BearerToken, error) {
 	request.Header.Set("Authorization", "Basic "+basicAuth(c))
 
 	resp, err := client.Do(request)
+	if err != nil {
+		return nil, err
+	}
+
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
@@ -115,7 +123,11 @@ func (c *Client) RevokeToken(refreshToken string) error {
 	request.Header.Set("Authorization", "Basic "+basicAuth(c))
 
 	resp, err := client.Do(request)
+	if err != nil {
+		return err
+	}
 	defer resp.Body.Close()
+
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return err
