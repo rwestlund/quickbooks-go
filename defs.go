@@ -19,4 +19,4 @@ const (
 
 const queryPageSize = 1000
 
-const minorVersion = "52"
+const minorVersion = "65"
