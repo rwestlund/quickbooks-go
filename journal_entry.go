@@ -28,7 +28,7 @@ type JournalEntry struct {
 }
 
 // CreateJournalEntry creates the journalEntry
-func (c *Client) CreateJournalEntry(journalEntry *JournalEntry) (*JournalEntry, error) {
+func (c *Client) CreateJournalEntry(journalEntry *JournalEntry, opts ...ClientOpt) (*JournalEntry, error) {
 	var u, err = url.Parse(string(c.Endpoint))
 	if err != nil {
 		return nil, err
@@ -36,6 +36,13 @@ func (c *Client) CreateJournalEntry(journalEntry *JournalEntry) (*JournalEntry, 
 	u.Path = "/v3/company/" + c.RealmID + "/journalentry"
 	var v = url.Values{}
 	v.Add("minorversion", minorVersion)
+
+	for _, o := range opts {
+		if o.Type == ClientOptTypeQueryParameter {
+			v.Add(o.Name, o.Value)
+		}
+	}
+
 	u.RawQuery = v.Encode()
 	var j []byte
 	j, err = json.Marshal(journalEntry)
@@ -129,7 +136,7 @@ func (c *Client) GetJournalEntryByID(id string) (*JournalEntry, error) {
 }
 
 // UpdateJournalEntry updates the journalEntry
-func (c *Client) UpdateJournalEntry(journalEntry *JournalEntry) (*JournalEntry, error) {
+func (c *Client) UpdateJournalEntry(journalEntry *JournalEntry, opts ...ClientOpt) (*JournalEntry, error) {
 	var u, err = url.Parse(string(c.Endpoint))
 	if err != nil {
 		return nil, err
@@ -137,6 +144,13 @@ func (c *Client) UpdateJournalEntry(journalEntry *JournalEntry) (*JournalEntry, 
 	u.Path = "/v3/company/" + c.RealmID + "/journalentry"
 	var v = url.Values{}
 	v.Add("minorversion", minorVersion)
+
+	for _, o := range opts {
+		if o.Type == ClientOptTypeQueryParameter {
+			v.Add(o.Name, o.Value)
+		}
+	}
+
 	u.RawQuery = v.Encode()
 	var d = struct {
 		*JournalEntry

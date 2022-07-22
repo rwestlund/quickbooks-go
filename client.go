@@ -33,6 +33,30 @@ const (
 	AccountingScope = "com.intuit.quickbooks.accounting"
 )
 
+// Types of options available per request to the client.
+type ClientOptType string
+
+// Types of options supported by this SDK
+var ClientOptTypeQueryParameter = ClientOptType("query_parameter")
+
+// Options available on requests made by the client.  Usually passed along as query parameters
+type ClientOpt struct {
+	// The type of the option.
+	Type ClientOptType
+	// The API name of the option
+	Name string
+	// The value of the option
+	Value string
+}
+
+// Available Options supported by this sdk
+
+var ClientOptAllowDuplicateDocNum = ClientOpt{
+	Type:  ClientOptTypeQueryParameter,
+	Name:  "include",
+	Value: "allowduplicatedocnum",
+}
+
 // Client is your handle to the QuickBooks API.
 type Client struct {
 	// Get this from oauth2.NewClient().
