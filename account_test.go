@@ -2,11 +2,12 @@ package quickbooks
 
 import (
 	"encoding/json"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"os"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestAccount(t *testing.T) {
@@ -35,6 +36,6 @@ func TestAccount(t *testing.T) {
 	assert.Equal(t, json.Number("0"), r.Account.CurrentBalance)
 	assert.True(t, r.Account.Active)
 	assert.Equal(t, "0", r.Account.SyncToken)
-	assert.Equal(t, "94", r.Account.ID)
+	assert.Equal(t, "94", r.Account.Id)
 	assert.False(t, r.Account.SubAccount)
 }

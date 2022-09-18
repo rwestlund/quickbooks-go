@@ -3,6 +3,7 @@ package quickbooks
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -36,7 +37,7 @@ const (
 )
 
 type Attachable struct {
-	ID                       string          `json:"Id,omitempty"`
+	Id                       string          `json:"Id,omitempty"`
 	SyncToken                string          `json:",omitempty"`
 	FileName                 string          `json:",omitempty"`
 	Note                     string          `json:",omitempty"`
@@ -64,233 +65,177 @@ type AttachableRef struct {
 	EntityRef ReferenceType `json:",omitempty"`
 }
 
-// CreateAttachable creates the attachable
+// CreateAttachable creates the given Attachable on the QuickBooks server,
+// returning the resulting Attachable object.
 func (c *Client) CreateAttachable(attachable *Attachable) (*Attachable, error) {
-	var u, err = url.Parse(string(c.Endpoint))
-	if err != nil {
-		return nil, err
-	}
-	u.Path = "/v3/company/" + c.RealmID + "/attachable"
-	var v = url.Values{}
-	v.Add("minorversion", minorVersion)
-	u.RawQuery = v.Encode()
-	var j []byte
-	j, err = json.Marshal(attachable)
-	if err != nil {
-		return nil, err
-	}
-	var req *http.Request
-	req, err = http.NewRequest("POST", u.String(), bytes.NewBuffer(j))
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Accept", "application/json")
-	var res *http.Response
-	res, err = c.Client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer res.Body.Close()
-
-	if res.StatusCode != http.StatusOK {
-		return nil, parseFailure(res)
-	}
-
-	var r struct {
+	var resp struct {
 		Attachable Attachable
 		Time       Date
 	}
-	err = json.NewDecoder(res.Body).Decode(&r)
-	return &r.Attachable, err
+
+	if err := c.post("attachable", attachable, &resp, nil); err != nil {
+		return nil, err
+	}
+
+	return &resp.Attachable, nil
 }
 
 // DeleteAttachable deletes the attachable
 func (c *Client) DeleteAttachable(attachable *Attachable) error {
-	var u, err = url.Parse(string(c.Endpoint))
-	if err != nil {
-		return err
-	}
-	u.Path = "/v3/company/" + c.RealmID + "/attachable"
-	var v = url.Values{}
-	v.Add("minorversion", minorVersion)
-	v.Add("operation", "delete")
-	u.RawQuery = v.Encode()
-	var j []byte
-	j, err = json.Marshal(attachable)
-	if err != nil {
-		return err
-	}
-	var req *http.Request
-	req, err = http.NewRequest("POST", u.String(), bytes.NewBuffer(j))
-	if err != nil {
-		return err
-	}
-	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Accept", "application/json")
-	var res *http.Response
-	res, err = c.Client.Do(req)
-	if err != nil {
-		return err
-	}
-	defer res.Body.Close()
-
-	if res.StatusCode != http.StatusOK {
-		return parseFailure(res)
+	if attachable.Id == "" || attachable.SyncToken == "" {
+		return errors.New("missing id/sync token")
 	}
 
-	return nil
+	return c.post("attachable", attachable, nil, map[string]string{"operation": "delete"})
 }
 
 // DownloadAttachable downloads the attachable
-func (c *Client) DownloadAttachable(attachableId string) (string, error) {
+func (c *Client) DownloadAttachable(id string) (string, error) {
+	endpointUrl := *c.endpoint
+	endpointUrl.Path += "download/" + id
 
-	var u, err = url.Parse(string(c.Endpoint))
-	if err != nil {
-		return "", err
-	}
-	u.Path = "/v3/company/" + c.RealmID + "/download/" + attachableId
-	var v = url.Values{}
-	v.Add("minorversion", minorVersion)
-	u.RawQuery = v.Encode()
-	var req *http.Request
-	req, err = http.NewRequest("GET", u.String(), nil)
-	if err != nil {
-		return "", err
-	}
-	var res *http.Response
-	res, err = c.Client.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer res.Body.Close()
+	urlValues := url.Values{}
+	urlValues.Add("minorversion", c.minorVersion)
+	endpointUrl.RawQuery = urlValues.Encode()
 
-	if res.StatusCode != http.StatusOK {
-		return "", parseFailure(res)
-	}
-	url, err := ioutil.ReadAll(res.Body)
+	req, err := http.NewRequest("GET", endpointUrl.String(), nil)
 	if err != nil {
 		return "", err
 	}
-	return string(url), err
+
+	resp, err := c.Client.Do(req)
+	if err != nil {
+		return "", err
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", parseFailure(resp)
+	}
+
+	downloadUrl, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	return string(downloadUrl), err
 }
 
-// GetAttachables gets the attachables
-func (c *Client) GetAttachables(startpos int) ([]Attachable, error) {
-
-	var r struct {
+// FindAttachables gets the full list of Attachables in the QuickBooks attachable.
+func (c *Client) FindAttachables() ([]Attachable, error) {
+	var resp struct {
 		QueryResponse struct {
-			Attachable    []Attachable
+			Attachables   []Attachable `json:"Attachable"`
+			MaxResults    int
+			StartPosition int
+			TotalCount    int
+		}
+	}
+
+	if err := c.query("SELECT COUNT(*) FROM Attachable", &resp); err != nil {
+		return nil, err
+	}
+
+	if resp.QueryResponse.TotalCount == 0 {
+		return nil, errors.New("no attachables could be found")
+	}
+
+	attachables := make([]Attachable, 0, resp.QueryResponse.TotalCount)
+
+	for i := 0; i < resp.QueryResponse.TotalCount; i += queryPageSize {
+		query := "SELECT * FROM Attachable ORDERBY Id STARTPOSITION " + strconv.Itoa(i+1) + " MAXRESULTS " + strconv.Itoa(queryPageSize)
+
+		if err := c.query(query, &resp); err != nil {
+			return nil, err
+		}
+
+		if resp.QueryResponse.Attachables == nil {
+			return nil, errors.New("no attachables could be found")
+		}
+
+		attachables = append(attachables, resp.QueryResponse.Attachables...)
+	}
+
+	return attachables, nil
+}
+
+// FindAttachableById finds the attachable by the given id
+func (c *Client) FindAttachableById(id string) (*Attachable, error) {
+	var resp struct {
+		Attachable Attachable
+		Time       Date
+	}
+
+	if err := c.get("attachable/"+id, &resp, nil); err != nil {
+		return nil, err
+	}
+
+	return &resp.Attachable, nil
+}
+
+// QueryAttachables accepts an SQL query and returns all attachables found using it
+func (c *Client) QueryAttachables(query string) ([]Attachable, error) {
+	var resp struct {
+		QueryResponse struct {
+			Attachables   []Attachable `json:"Attachable"`
 			StartPosition int
 			MaxResults    int
 		}
 	}
-	q := "SELECT * FROM Attachable ORDERBY Id STARTPOSITION " +
-		strconv.Itoa(startpos) + " MAXRESULTS " + strconv.Itoa(queryPageSize)
-	err := c.query(q, &r)
-	if err != nil {
+
+	if err := c.query(query, &resp); err != nil {
 		return nil, err
 	}
 
-	if r.QueryResponse.Attachable == nil {
-		r.QueryResponse.Attachable = make([]Attachable, 0)
-	}
-	return r.QueryResponse.Attachable, nil
-}
-
-// GetAttachable gets the attachable
-func (c *Client) GetAttachable(attachableId string) (*Attachable, error) {
-	var u, err = url.Parse(string(c.Endpoint))
-	if err != nil {
-		return nil, err
-	}
-	u.Path = "/v3/company/" + c.RealmID + "/attachable/" + attachableId
-	var v = url.Values{}
-	v.Add("minorversion", minorVersion)
-	u.RawQuery = v.Encode()
-	var req *http.Request
-	req, err = http.NewRequest("GET", u.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Add("Accept", "application/json")
-	var res *http.Response
-	res, err = c.Client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer res.Body.Close()
-
-	if res.StatusCode != http.StatusOK {
-		return nil, parseFailure(res)
+	if resp.QueryResponse.Attachables == nil {
+		return nil, errors.New("could not find any attachables")
 	}
 
-	var r struct {
-		Attachable Attachable
-		Time       Date
-	}
-	err = json.NewDecoder(res.Body).Decode(&r)
-	return &r.Attachable, err
+	return resp.QueryResponse.Attachables, nil
 }
 
 // UpdateAttachable updates the attachable
 func (c *Client) UpdateAttachable(attachable *Attachable) (*Attachable, error) {
-	var u, err = url.Parse(string(c.Endpoint))
+	if attachable.Id == "" {
+		return nil, errors.New("missing attachable id")
+	}
+
+	existingAttachable, err := c.FindAttachableById(attachable.Id)
 	if err != nil {
 		return nil, err
 	}
-	u.Path = "/v3/company/" + c.RealmID + "/attachable"
-	var v = url.Values{}
-	v.Add("minorversion", minorVersion)
-	u.RawQuery = v.Encode()
-	var d = struct {
+
+	attachable.SyncToken = existingAttachable.SyncToken
+
+	payload := struct {
 		*Attachable
 		Sparse bool `json:"sparse"`
 	}{
 		Attachable: attachable,
 		Sparse:     true,
 	}
-	var j []byte
-	j, err = json.Marshal(d)
-	if err != nil {
-		return nil, err
-	}
-	var req *http.Request
-	req, err = http.NewRequest("POST", u.String(), bytes.NewBuffer(j))
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Accept", "application/json")
-	var res *http.Response
-	res, err = c.Client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer res.Body.Close()
 
-	if res.StatusCode != http.StatusOK {
-		return nil, parseFailure(res)
-	}
-
-	var r struct {
+	var attachableData struct {
 		Attachable Attachable
 		Time       Date
 	}
-	err = json.NewDecoder(res.Body).Decode(&r)
-	return &r.Attachable, err
+
+	if err = c.post("attachable", payload, &attachableData, nil); err != nil {
+		return nil, err
+	}
+
+	return &attachableData.Attachable, err
 }
 
 // UploadAttachable uploads the attachable
 func (c *Client) UploadAttachable(attachable *Attachable, data io.Reader) (*Attachable, error) {
-	var u, err = url.Parse(string(c.Endpoint))
-	if err != nil {
-		return nil, err
-	}
-	u.Path = "/v3/company/" + c.RealmID + "/upload"
-	var v = url.Values{}
-	v.Add("minorversion", minorVersion)
-	u.RawQuery = v.Encode()
+	endpointUrl := *c.endpoint
+	endpointUrl.Path += "upload"
+
+	urlValues := url.Values{}
+	urlValues.Add("minorversion", c.minorVersion)
+	endpointUrl.RawQuery = urlValues.Encode()
 
 	var buffer bytes.Buffer
 	mWriter := multipart.NewWriter(&buffer)
@@ -299,15 +244,17 @@ func (c *Client) UploadAttachable(attachable *Attachable, data io.Reader) (*Atta
 	metadataHeader := make(textproto.MIMEHeader)
 	metadataHeader.Set("Content-Disposition", fmt.Sprintf(`form-data; name="%s"; filename="%s"`, "file_metadata_01", "attachment.json"))
 	metadataHeader.Set("Content-Type", "application/json")
-	var metadataContent io.Writer
-	if metadataContent, err = mWriter.CreatePart(metadataHeader); err != nil {
-		return nil, err
-	}
-	var j []byte
-	j, err = json.Marshal(attachable)
+
+	metadataContent, err := mWriter.CreatePart(metadataHeader)
 	if err != nil {
 		return nil, err
 	}
+
+	j, err := json.Marshal(attachable)
+	if err != nil {
+		return nil, err
+	}
+
 	if _, err = metadataContent.Write(j); err != nil {
 		return nil, err
 	}
@@ -316,18 +263,19 @@ func (c *Client) UploadAttachable(attachable *Attachable, data io.Reader) (*Atta
 	fileHeader := make(textproto.MIMEHeader)
 	fileHeader.Set("Content-Disposition", fmt.Sprintf(`form-data; name="%s"; filename="%s"`, "file_content_01", attachable.FileName))
 	fileHeader.Set("Content-Type", string(attachable.ContentType))
-	var fileContent io.Writer
-	if fileContent, err = mWriter.CreatePart(fileHeader); err != nil {
+
+	fileContent, err := mWriter.CreatePart(fileHeader)
+	if err != nil {
 		return nil, err
 	}
+
 	if _, err = io.Copy(fileContent, data); err != nil {
 		return nil, err
 	}
 
 	mWriter.Close()
 
-	var req *http.Request
-	req, err = http.NewRequest("POST", u.String(), &buffer)
+	req, err := http.NewRequest("POST", endpointUrl.String(), &buffer)
 	if err != nil {
 		return nil, err
 	}
@@ -335,15 +283,15 @@ func (c *Client) UploadAttachable(attachable *Attachable, data io.Reader) (*Atta
 	req.Header.Add("Content-Type", mWriter.FormDataContentType())
 	req.Header.Add("Accept", "application/json")
 
-	var res *http.Response
-	res, err = c.Client.Do(req)
+	resp, err := c.Client.Do(req)
 	if err != nil {
 		return nil, err
 	}
-	defer res.Body.Close()
 
-	if res.StatusCode != http.StatusOK {
-		return nil, parseFailure(res)
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, parseFailure(resp)
 	}
 
 	var r struct {
@@ -352,6 +300,10 @@ func (c *Client) UploadAttachable(attachable *Attachable, data io.Reader) (*Atta
 		}
 		Time Date
 	}
-	err = json.NewDecoder(res.Body).Decode(&r)
-	return &r.AttachableResponse[0].Attachable, err
+
+	if err = json.NewDecoder(resp.Body).Decode(&r); err != nil {
+		return nil, err
+	}
+
+	return &r.AttachableResponse[0].Attachable, nil
 }

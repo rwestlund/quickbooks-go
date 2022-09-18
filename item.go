@@ -5,24 +5,23 @@ package quickbooks
 
 import (
 	"encoding/json"
-	"net/http"
-	"net/url"
+	"errors"
 	"strconv"
 )
 
 // Item represents a QuickBooks Item object (a product type).
 type Item struct {
-	ID        string `json:"Id,omitempty"`
-	SyncToken string `json:",omitempty"`
-	//MetaData
+	Id          string   `json:"Id,omitempty"`
+	SyncToken   string   `json:",omitempty"`
+	MetaData    MetaData `json:",omitempty"`
 	Name        string
 	SKU         string `json:"Sku,omitempty"`
 	Description string `json:",omitempty"`
 	Active      bool   `json:",omitempty"`
-	//SubItem
-	//ParentRef
-	//Level
-	//FullyQualifiedName
+	// SubItem
+	// ParentRef
+	// Level
+	// FullyQualifiedName
 	Taxable             bool        `json:",omitempty"`
 	SalesTaxIncluded    bool        `json:",omitempty"`
 	UnitPrice           json.Number `json:",omitempty"`
@@ -34,69 +33,127 @@ type Item struct {
 	PurchaseCost        json.Number `json:",omitempty"`
 	AssetAccountRef     ReferenceType
 	TrackQtyOnHand      bool `json:",omitempty"`
-	//InvStartDate Date
+	// InvStartDate Date
 	QtyOnHand          json.Number   `json:",omitempty"`
 	SalesTaxCodeRef    ReferenceType `json:",omitempty"`
 	PurchaseTaxCodeRef ReferenceType `json:",omitempty"`
 }
 
-// FetchItems returns the list of Items in the QuickBooks account. These are
-// basically product types, and you need them to create invoices.
-func (c *Client) FetchItems() ([]Item, error) {
-	var r struct {
+func (c *Client) CreateItem(item *Item) (*Item, error) {
+	var resp struct {
+		Item Item
+		Time Date
+	}
+
+	if err := c.post("item", item, &resp, nil); err != nil {
+		return nil, err
+	}
+
+	return &resp.Item, nil
+}
+
+// FindItems gets the full list of Items in the QuickBooks account.
+func (c *Client) FindItems() ([]Item, error) {
+	var resp struct {
 		QueryResponse struct {
-			Item          []Item
+			Items         []Item `json:"Item"`
+			MaxResults    int
+			StartPosition int
+			TotalCount    int
+		}
+	}
+
+	if err := c.query("SELECT COUNT(*) FROM Item", &resp); err != nil {
+		return nil, err
+	}
+
+	if resp.QueryResponse.TotalCount == 0 {
+		return nil, errors.New("no items could be found")
+	}
+
+	items := make([]Item, 0, resp.QueryResponse.TotalCount)
+
+	for i := 0; i < resp.QueryResponse.TotalCount; i += queryPageSize {
+		query := "SELECT * FROM Item ORDERBY Id STARTPOSITION " + strconv.Itoa(i+1) + " MAXRESULTS " + strconv.Itoa(queryPageSize)
+
+		if err := c.query(query, &resp); err != nil {
+			return nil, err
+		}
+
+		if resp.QueryResponse.Items == nil {
+			return nil, errors.New("no items could be found")
+		}
+
+		items = append(items, resp.QueryResponse.Items...)
+	}
+
+	return items, nil
+}
+
+// FindItemById returns an item with a given Id.
+func (c *Client) FindItemById(id string) (*Item, error) {
+	var resp struct {
+		Item Item
+		Time Date
+	}
+
+	if err := c.get("item/"+id, &resp, nil); err != nil {
+		return nil, err
+	}
+
+	return &resp.Item, nil
+}
+
+// QueryItems accepts an SQL query and returns all items found using it
+func (c *Client) QueryItems(query string) ([]Item, error) {
+	var resp struct {
+		QueryResponse struct {
+			Items         []Item `json:"Item"`
 			StartPosition int
 			MaxResults    int
 		}
 	}
-	err := c.query("SELECT * FROM Item MAXRESULTS "+strconv.Itoa(queryPageSize), &r)
-	if err != nil {
+
+	if err := c.query(query, &resp); err != nil {
 		return nil, err
 	}
 
-	// Make sure we don't return nil if there are no items.
-	if r.QueryResponse.Item == nil {
-		r.QueryResponse.Item = make([]Item, 0)
+	if resp.QueryResponse.Items == nil {
+		return nil, errors.New("could not find any items")
 	}
-	return r.QueryResponse.Item, nil
+
+	return resp.QueryResponse.Items, nil
 }
 
-// FetchItem returns just one particular Item from QuickBooks, by ID.
-func (c *Client) FetchItem(id string) (*Item, error) {
-	var u, err = url.Parse(string(c.Endpoint))
+// UpdateItem updates the item
+func (c *Client) UpdateItem(item *Item) (*Item, error) {
+	if item.Id == "" {
+		return nil, errors.New("missing item id")
+	}
+
+	existingItem, err := c.FindItemById(item.Id)
 	if err != nil {
 		return nil, err
 	}
-	u.Path = "/v3/company/" + c.RealmID + "/item/" + id
-	var v = url.Values{}
-	v.Add("minorversion", minorVersion)
-	u.RawQuery = v.Encode()
 
-	var req *http.Request
-	req, err = http.NewRequest("GET", u.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Add("Accept", "application/json")
-	var res *http.Response
-	res, err = c.Client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer res.Body.Close()
+	item.SyncToken = existingItem.SyncToken
 
-	if res.StatusCode != http.StatusOK {
-		return nil, parseFailure(res)
+	payload := struct {
+		*Item
+		Sparse bool `json:"sparse"`
+	}{
+		Item:   item,
+		Sparse: true,
 	}
 
-	var r struct {
+	var itemData struct {
 		Item Item
 		Time Date
 	}
-	err = json.NewDecoder(res.Body).Decode(&r)
-	if err != nil {
+
+	if err = c.post("item", payload, &itemData, nil); err != nil {
 		return nil, err
 	}
-	return &r.Item, nil
+
+	return &itemData.Item, err
 }
