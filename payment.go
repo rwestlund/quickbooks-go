@@ -10,7 +10,7 @@ type Payment struct {
 	Domain              string        `json:"domain,omitempty"`
 	DepositToAccountRef ReferenceType `json:",omitempty"`
 	UnappliedAmt        float64       `json:",omitempty"`
-	TxnDate             string        `json:",omitempty"`
+	TxnDate             Date          `json:",omitempty"`
 	TotalAmt            float64       `json:",omitempty"`
 	ProcessPayment      bool          `json:",omitempty"`
 	Sparse              bool          `json:"sparse,omitempty"`
