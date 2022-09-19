@@ -20,14 +20,9 @@ type Payment struct {
 }
 
 type PaymentLine struct {
-	Amount    float64 `json:",omitempty"`
-	LinkedTxn []struct {
-		TxnLineId string `json:",omitempty"`
-		TxnId     string `json:",omitempty"`
-		TxnType   string `json:",omitempty"`
-	} `json:",omitempty"`
+	Amount    float64     `json:",omitempty"`
+	LinkedTxn []LinkedTxn `json:",omitempty"`
 }
-
 // CreatePayment creates the given payment within QuickBooks
 func (c *Client) CreatePayment(payment *Payment) (*Payment, error) {
 	var resp struct {
