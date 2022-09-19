@@ -15,7 +15,6 @@ type Employee struct {
 	Active           bool            `json:",omitempty"`
 	SSN              string          `json:",omitempty"`
 	PrimaryAddr      PhysicalAddress `json:",omitempty"`
-	Sparse           bool            `json:"sparse,omitempty"`
 	BillableTime     bool            `json:",omitempty"`
 	GivenName        string          `json:",omitempty"`
 	Id               string          `json:",omitempty"`

@@ -11,14 +11,13 @@ type Estimate struct {
 	Domain                string          `json:"domain,omitempty"`
 	TxnStatus             string          `json:",omitempty"`
 	BillEmail             EmailAddress    `json:",omitempty"`
-	TxnDate               string          `json:",omitempty"`
+	TxnDate               Date            `json:",omitempty"`
 	TotalAmt              float64         `json:",omitempty"`
 	CustomerRef           ReferenceType   `json:",omitempty"`
 	CustomerMemo          MemoRef         `json:",omitempty"`
 	ShipAddr              PhysicalAddress `json:",omitempty"`
 	PrintStatus           string          `json:",omitempty"`
 	BillAddr              PhysicalAddress `json:",omitempty"`
-	Sparse                bool            `json:"sparse,omitempty"`
 	EmailStatus           string          `json:",omitempty"`
 	Line                  []Line          `json:",omitempty"`
 	ApplyTaxAfterDiscount bool            `json:",omitempty"`

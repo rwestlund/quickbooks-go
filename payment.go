@@ -13,7 +13,6 @@ type Payment struct {
 	TxnDate             Date          `json:",omitempty"`
 	TotalAmt            float64       `json:",omitempty"`
 	ProcessPayment      bool          `json:",omitempty"`
-	Sparse              bool          `json:"sparse,omitempty"`
 	Line                []PaymentLine `json:",omitempty"`
 	CustomerRef         ReferenceType `json:",omitempty"`
 	Id                  string        `json:",omitempty"`

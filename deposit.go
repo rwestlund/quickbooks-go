@@ -9,9 +9,8 @@ type Deposit struct {
 	SyncToken           string        `json:",omitempty"`
 	Domain              string        `json:"domain,omitempty"`
 	DepositToAccountRef ReferenceType `json:",omitempty"`
-	TxnDate             string        `json:",omitempty"`
+	TxnDate             Date          `json:",omitempty"`
 	TotalAmt            float64       `json:",omitempty"`
-	Sparse              bool          `json:"sparse,omitempty"`
 	Line                []PaymentLine `json:",omitempty"`
 	Id                  string        `json:",omitempty"`
 	MetaData            MetaData      `json:",omitempty"`

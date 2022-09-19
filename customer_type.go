@@ -8,7 +8,6 @@ type CustomerType struct {
 	SyncToken string   `json:",omitempty"`
 	Domain    string   `json:"domain,omitempty"`
 	Name      string   `json:",omitempty"`
-	Sparse    bool     `json:"sparse,omitempty"`
 	Active    bool     `json:",omitempty"`
 	Id        string   `json:",omitempty"`
 	MetaData  MetaData `json:",omitempty"`
