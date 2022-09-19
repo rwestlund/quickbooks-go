@@ -2,9 +2,10 @@ package examples
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/rwestlund/quickbooks-go"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestAuthorizationFlow(t *testing.T) {
@@ -12,7 +13,7 @@ func TestAuthorizationFlow(t *testing.T) {
 	clientSecret := "<your-client-secret>"
 	realmId := "<realm-id>"
 
-	qbClient, err := quickbooks.NewQuickbooksClient(clientId, clientSecret, realmId, false, nil)
+	qbClient, err := quickbooks.NewClient(clientId, clientSecret, realmId, false, "", nil)
 	require.NoError(t, err)
 
 	// To do first when you receive the authorization code from quickbooks callback
@@ -27,10 +28,10 @@ func TestAuthorizationFlow(t *testing.T) {
 	require.NoError(t, err)
 
 	// Make a request!
-	info, err := qbClient.FetchCompanyInfo()
+	info, err := qbClient.FindCompanyInfo()
 	require.NoError(t, err)
 	fmt.Println(info)
 
 	// Revoke the token, this should be done only if a user unsubscribe from your app
-	qbClient.RevokeToken(bearerToken.RefreshToken)
+	require.NoError(t, qbClient.RevokeToken(bearerToken.RefreshToken))
 }

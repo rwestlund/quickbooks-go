@@ -1,10 +1,8 @@
 package quickbooks
 
 import (
-	"bytes"
 	"encoding/json"
-	"net/http"
-	"net/url"
+	"errors"
 	"strconv"
 )
 
@@ -27,7 +25,7 @@ const (
 )
 
 type Account struct {
-	ID                            string        `json:"Id,omitempty"`
+	Id                            string        `json:"Id,omitempty"`
 	Name                          string        `json:",omitempty"`
 	SyncToken                     string        `json:",omitempty"`
 	AcctNum                       string        `json:",omitempty"`
@@ -48,151 +46,122 @@ type Account struct {
 	CurrentBalance                json.Number   `json:",omitempty"`
 }
 
-// CreateAccount creates the account
+// CreateAccount creates the given account within QuickBooks
 func (c *Client) CreateAccount(account *Account) (*Account, error) {
-	var u, err = url.Parse(string(c.Endpoint))
-	if err != nil {
-		return nil, err
-	}
-	u.Path = "/v3/company/" + c.RealmID + "/account"
-	var v = url.Values{}
-	v.Add("minorversion", minorVersion)
-	u.RawQuery = v.Encode()
-	var j []byte
-	j, err = json.Marshal(account)
-	if err != nil {
-		return nil, err
-	}
-	var req *http.Request
-	req, err = http.NewRequest("POST", u.String(), bytes.NewBuffer(j))
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Accept", "application/json")
-	var res *http.Response
-	res, err = c.Client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer res.Body.Close()
-
-	if res.StatusCode != http.StatusOK {
-		return nil, parseFailure(res)
-	}
-
-	var r struct {
+	var resp struct {
 		Account Account
 		Time    Date
 	}
-	err = json.NewDecoder(res.Body).Decode(&r)
-	return &r.Account, err
+
+	if err := c.post("account", account, &resp, nil); err != nil {
+		return nil, err
+	}
+
+	return &resp.Account, nil
 }
 
-// QueryAccount gets the account
-func (c *Client) QueryAccount(selectStatement string) ([]Account, error) {
-	var r struct {
+// FindAccounts gets the full list of Accounts in the QuickBooks account.
+func (c *Client) FindAccounts() ([]Account, error) {
+	var resp struct {
 		QueryResponse struct {
-			Account       []Account
+			Accounts      []Account `json:"Account"`
+			MaxResults    int
+			StartPosition int
+			TotalCount    int
+		}
+	}
+
+	if err := c.query("SELECT COUNT(*) FROM Account", &resp); err != nil {
+		return nil, err
+	}
+
+	if resp.QueryResponse.TotalCount == 0 {
+		return nil, errors.New("no accounts could be found")
+	}
+
+	accounts := make([]Account, 0, resp.QueryResponse.TotalCount)
+
+	for i := 0; i < resp.QueryResponse.TotalCount; i += queryPageSize {
+		query := "SELECT * FROM Account ORDERBY Id STARTPOSITION " + strconv.Itoa(i+1) + " MAXRESULTS " + strconv.Itoa(queryPageSize)
+
+		if err := c.query(query, &resp); err != nil {
+			return nil, err
+		}
+
+		if resp.QueryResponse.Accounts == nil {
+			return nil, errors.New("no accounts could be found")
+		}
+
+		accounts = append(accounts, resp.QueryResponse.Accounts...)
+	}
+
+	return accounts, nil
+}
+
+// FindAccountById returns an account with a given Id.
+func (c *Client) FindAccountById(id string) (*Account, error) {
+	var resp struct {
+		Account Account
+		Time    Date
+	}
+
+	if err := c.get("account/"+id, &resp, nil); err != nil {
+		return nil, err
+	}
+
+	return &resp.Account, nil
+}
+
+// QueryAccounts accepts an SQL query and returns all accounts found using it
+func (c *Client) QueryAccounts(query string) ([]Account, error) {
+	var resp struct {
+		QueryResponse struct {
+			Accounts      []Account `json:"Account"`
 			StartPosition int
 			MaxResults    int
 		}
 	}
-	err := c.query(selectStatement, &r)
-	if err != nil {
+
+	if err := c.query(query, &resp); err != nil {
 		return nil, err
 	}
 
-	if r.QueryResponse.Account == nil {
-		r.QueryResponse.Account = make([]Account, 0)
+	if resp.QueryResponse.Accounts == nil {
+		return nil, errors.New("could not find any accounts")
 	}
-	return r.QueryResponse.Account, nil
-}
 
-// GetAccounts gets the account
-func (c *Client) GetAccounts(startpos int, pagesize int) ([]Account, error) {
-	q := "SELECT * FROM Account ORDERBY Id STARTPOSITION " +
-		strconv.Itoa(startpos) + " MAXRESULTS " + strconv.Itoa(pagesize)
-	return c.QueryAccount(q)
-}
-
-// GetAccountByID returns an account with a given ID.
-func (c *Client) GetAccountByID(id string) (*Account, error) {
-	var u, err = url.Parse(string(c.Endpoint))
-	if err != nil {
-		return nil, err
-	}
-	u.Path = "/v3/company/" + c.RealmID + "/account/" + id
-	var v = url.Values{}
-	v.Add("minorversion", minorVersion)
-	u.RawQuery = v.Encode()
-	var req *http.Request
-	req, err = http.NewRequest("GET", u.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Add("Accept", "application/json")
-	var res *http.Response
-	res, err = c.Client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer res.Body.Close()
-	if res.StatusCode != http.StatusOK {
-		return nil, parseFailure(res)
-	}
-	var r struct {
-		Account Account
-		Time    Date
-	}
-	err = json.NewDecoder(res.Body).Decode(&r)
-	return &r.Account, err
+	return resp.QueryResponse.Accounts, nil
 }
 
 // UpdateAccount updates the account
 func (c *Client) UpdateAccount(account *Account) (*Account, error) {
-	var u, err = url.Parse(string(c.Endpoint))
+	if account.Id == "" {
+		return nil, errors.New("missing account id")
+	}
+
+	existingAccount, err := c.FindAccountById(account.Id)
 	if err != nil {
 		return nil, err
 	}
-	u.Path = "/v3/company/" + c.RealmID + "/account"
-	var v = url.Values{}
-	v.Add("minorversion", minorVersion)
-	u.RawQuery = v.Encode()
-	var d = struct {
+
+	account.SyncToken = existingAccount.SyncToken
+
+	payload := struct {
 		*Account
 		Sparse bool `json:"sparse"`
 	}{
 		Account: account,
 		Sparse:  true,
 	}
-	var j []byte
-	j, err = json.Marshal(d)
-	if err != nil {
-		return nil, err
-	}
-	var req *http.Request
-	req, err = http.NewRequest("POST", u.String(), bytes.NewBuffer(j))
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Accept", "application/json")
-	var res *http.Response
-	res, err = c.Client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer res.Body.Close()
 
-	if res.StatusCode != http.StatusOK {
-		return nil, parseFailure(res)
-	}
-
-	var r struct {
+	var accountData struct {
 		Account Account
 		Time    Date
 	}
-	err = json.NewDecoder(res.Body).Decode(&r)
-	return &r.Account, err
+
+	if err = c.post("account", payload, &accountData, nil); err != nil {
+		return nil, err
+	}
+
+	return &accountData.Account, err
 }

@@ -46,7 +46,7 @@ func TestBill(t *testing.T) {
 	assert.Equal(t, 1, len(r.Bill.Line))
 	balance, _ := r.Bill.Balance.Int64()
 	assert.Equal(t, int64(0), balance)
-	assert.Equal(t, "25", r.Bill.ID)
+	assert.Equal(t, "25", r.Bill.Id)
 	assert.Equal(t, "2014-11-06T15:37:25-08:00", r.Bill.MetaData.CreateTime.String())
 	assert.Equal(t, "2015-02-09T10:11:11-08:00", r.Bill.MetaData.LastUpdatedTime.String())
 }

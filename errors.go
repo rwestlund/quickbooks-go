@@ -6,19 +6,11 @@ package quickbooks
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 )
-
-// Error implements the error interface.
-func (f Failure) Error() string {
-	var text, err = json.Marshal(f)
-	if err != nil {
-		return "When marshalling error:" + err.Error()
-	}
-	return string(text)
-}
 
 // Failure is the outermost struct that holds an error response.
 type Failure struct {
@@ -34,17 +26,28 @@ type Failure struct {
 	Time Date `json:"time"`
 }
 
+// Error implements the error interface.
+func (f Failure) Error() string {
+	text, err := json.Marshal(f)
+	if err != nil {
+		return fmt.Sprintf("unexpected error while marshalling error: %v", err)
+	}
+
+	return string(text)
+}
+
 // parseFailure takes a response reader and tries to parse a Failure.
-func parseFailure(res *http.Response) error {
-	var msg, err = ioutil.ReadAll(res.Body)
+func parseFailure(resp *http.Response) error {
+	msg, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return errors.New("When reading response body:" + err.Error())
 	}
+
 	var errStruct Failure
-	err = json.Unmarshal(msg, &errStruct)
-	if err != nil {
-		return errors.New(strconv.Itoa(res.StatusCode) +
-			" " + string(msg))
+
+	if err = json.Unmarshal(msg, &errStruct); err != nil {
+		return errors.New(strconv.Itoa(resp.StatusCode) + " " + string(msg))
 	}
+
 	return errStruct
 }
