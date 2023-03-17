@@ -18,7 +18,7 @@ type Class struct {
 
 // GetClasses fetches classes based on a page size
 func (c *Client) GetClasses(startpos int, pagesize int) ([]Class, error) {
-	q := "SELECT * FROM Account ORDERBY Id STARTPOSITION " +
+	q := "SELECT * FROM Class ORDERBY Id STARTPOSITION " +
 		strconv.Itoa(startpos) + " MAXRESULTS " + strconv.Itoa(pagesize)
 	return c.QueryClasses(q)
 }
