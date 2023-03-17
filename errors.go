@@ -8,7 +8,6 @@ import (
 	"errors"
 	"io/ioutil"
 	"net/http"
-	"strconv"
 )
 
 // Error implements the error interface.
@@ -22,16 +21,17 @@ func (f Failure) Error() string {
 
 // Failure is the outermost struct that holds an error response.
 type Failure struct {
-	Fault struct {
-		Error []struct {
-			Message string
-			Detail  string
-			Code    string `json:"code"`
-			Element string `json:"element"`
-		}
-		Type string `json:"type"`
+	Fault Fault `json:"fault"`
+}
+
+type Fault struct {
+	Error []struct {
+		Message string
+		Detail  string
+		Code    string `json:"code"`
+		Element string `json:"element"`
 	}
-	Time Date `json:"time"`
+	Type string `json:"type"`
 }
 
 // parseFailure takes a response reader and tries to parse a Failure.
@@ -43,8 +43,7 @@ func parseFailure(res *http.Response) error {
 	var errStruct Failure
 	err = json.Unmarshal(msg, &errStruct)
 	if err != nil {
-		return errors.New(strconv.Itoa(res.StatusCode) +
-			" " + string(msg))
+		return err
 	}
 	return errStruct
 }
