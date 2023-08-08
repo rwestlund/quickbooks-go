@@ -8,12 +8,16 @@ import (
 )
 
 type Class struct {
-	ID                 string `json:"Id,omitempty"`
-	Name               string `json:",omitempty"`
-	SyncToken          string `json:",omitempty"`
-	ParentRef          string `json:",omitempty"`
-	SubClass           bool   `json:",omitempty"`
-	FullyQualifiedName string `json:",omitempty"`
+	ID                 string    `json:"Id,omitempty"`
+	Name               string    `json:",omitempty"`
+	SyncToken          string    `json:",omitempty"`
+	ParentRef          ParentRef `json:",omitempty"`
+	SubClass           bool      `json:",omitempty"`
+	FullyQualifiedName string    `json:",omitempty"`
+}
+
+type ParentRef struct {
+	Value string `json:"value"`
 }
 
 // GetClasses fetches classes based on a page size
