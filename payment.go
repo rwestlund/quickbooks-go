@@ -23,7 +23,8 @@ type PaymentLine struct {
 	Amount    float64     `json:",omitempty"`
 	LinkedTxn []LinkedTxn `json:",omitempty"`
 }
-// CreatePayment creates the given payment within QuickBooks
+
+// CreatePayment creates the given payment within QuickBooks.
 func (c *Client) CreatePayment(payment *Payment) (*Payment, error) {
 	var resp struct {
 		Payment Payment
@@ -37,6 +38,7 @@ func (c *Client) CreatePayment(payment *Payment) (*Payment, error) {
 	return &resp.Payment, nil
 }
 
+// DeletePayment deletes the given payment from QuickBooks.
 func (c *Client) DeletePayment(payment *Payment) error {
 	if payment.Id == "" || payment.SyncToken == "" {
 		return errors.New("missing id/sync token")
@@ -97,7 +99,7 @@ func (c *Client) FindPaymentById(id string) (*Payment, error) {
 	return &resp.Payment, nil
 }
 
-// QueryPayments accepts an SQL query and returns all payments found using it
+// QueryPayments accepts a SQL query and returns all payments found using it.
 func (c *Client) QueryPayments(query string) ([]Payment, error) {
 	var resp struct {
 		QueryResponse struct {
@@ -118,7 +120,7 @@ func (c *Client) QueryPayments(query string) ([]Payment, error) {
 	return resp.QueryResponse.Payments, nil
 }
 
-// UpdatePayment updates the payment
+// UpdatePayment updates the given payment in QuickBooks.
 func (c *Client) UpdatePayment(payment *Payment) (*Payment, error) {
 	if payment.Id == "" {
 		return nil, errors.New("missing payment id")
@@ -151,7 +153,7 @@ func (c *Client) UpdatePayment(payment *Payment) (*Payment, error) {
 	return &paymentData.Payment, err
 }
 
-// VoidPayment voids the given payment
+// VoidPayment voids the given payment in QuickBooks.
 func (c *Client) VoidPayment(payment Payment) error {
 	if payment.Id == "" {
 		return errors.New("missing payment id")

@@ -1,25 +1,5 @@
 // Copyright (c) 2018, Randy Westlund. All rights reserved.
 // This code is under the BSD-2-Clause license.
-
-/*
-Package quickbooks provides access to Intuit's QuickBooks Online API.
-
-NOTE: This library is very incomplete. I just implemented the minimum for my
-use case. Pull requests welcome :)
-
- // Do this after you go through the normal OAuth process.
- var client = oauth2.NewClient(ctx, tokenSource)
-
- // Initialize the client handle.
- var qb = quickbooks.Client{
-	 Client: client,
-	 Endpoint: quickbooks.SandboxEndpoint,
-	 RealmId: "some company account Id"'
- }
-
- // Make a request!
- var companyInfo, err = qb.FindCompanyInfo()
-*/
 package quickbooks
 
 import (
@@ -173,7 +153,6 @@ func (c *Client) req(method string, endpoint string, payloadData interface{}, re
 			time.Sleep(1 * time.Minute)
 			c.throttled = false
 		}(c)
-		break
 	default:
 		return parseFailure(resp)
 	}

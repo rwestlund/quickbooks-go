@@ -44,7 +44,7 @@ type Invoice struct {
 	BillEmail                    EmailAddress  `json:",omitempty"`
 	BillEmailCC                  EmailAddress  `json:"BillEmailCc,omitempty"`
 	BillEmailBCC                 EmailAddress  `json:"BillEmailBcc,omitempty"`
-	DeliveryInfo                 DeliveryInfo  `json:",omitempty"`
+	DeliveryInfo                 *DeliveryInfo `json:",omitempty"`
 	Balance                      json.Number   `json:",omitempty"`
 	TxnSource                    string        `json:",omitempty"`
 	AllowOnlineCreditCardPayment bool          `json:",omitempty"`
@@ -63,14 +63,12 @@ type LinkedTxn struct {
 	TxnType string `json:"TxnType"`
 }
 
-// TxnTaxDetail ...
 type TxnTaxDetail struct {
 	TxnTaxCodeRef ReferenceType `json:",omitempty"`
 	TotalTax      json.Number   `json:",omitempty"`
 	TaxLine       []Line        `json:",omitempty"`
 }
 
-// AccountBasedExpenseLineDetail
 type AccountBasedExpenseLineDetail struct {
 	AccountRef ReferenceType
 	TaxAmount  json.Number `json:",omitempty"`
@@ -82,17 +80,16 @@ type AccountBasedExpenseLineDetail struct {
 	// CustomerRef    ReferenceType `json:",omitempty"`
 }
 
-// Line ...
 type Line struct {
 	Id                            string `json:",omitempty"`
 	LineNum                       int    `json:",omitempty"`
 	Description                   string `json:",omitempty"`
 	Amount                        json.Number
 	DetailType                    string
-	AccountBasedExpenseLineDetail AccountBasedExpenseLineDetail
-	SalesItemLineDetail           SalesItemLineDetail `json:",omitempty"`
-	DiscountLineDetail            DiscountLineDetail  `json:",omitempty"`
-	TaxLineDetail                 TaxLineDetail       `json:",omitempty"`
+	AccountBasedExpenseLineDetail AccountBasedExpenseLineDetail `json:",omitempty"`
+	SalesItemLineDetail           SalesItemLineDetail           `json:",omitempty"`
+	DiscountLineDetail            DiscountLineDetail            `json:",omitempty"`
+	TaxLineDetail                 TaxLineDetail                 `json:",omitempty"`
 }
 
 // TaxLineDetail ...
