@@ -7,39 +7,36 @@ import (
 )
 
 type CreditMemo struct {
-	SyncToken               string `json:",omitempty"`
-	DocNumber               string
-	CustomMemo              string         `json:",omitempty"`
-	TxnDate                 *Date          `json:",omitempty"`
-	TotalAmt                json.Number    `json:",omitempty"`
-	CustomRef               *ReferenceType `json:",omitempty"`
-	Line                    []Line
-	CurrencyRef             *ReferenceType `json:",omitempty"`
-	APAccountRef            *ReferenceType `json:",omitempty"`
-	SalesTermRef            *ReferenceType `json:",omitempty"`
-	LinkedTxn               []LinkedTxn    `json:",omitempty"`
-	TransactionLocationType string         `json:",omitempty"`
-	DueDate                 Date           `json:",omitempty"`
-	TxnTaxDetail            *TxnTaxDetail  `json:",omitempty"`
-	ExchangeRate            json.Number    `json:",omitempty"`
-	DepartmentRef           *ReferenceType `json:",omitempty"`
-	IncludeInAnnualTPAR     bool           `json:",omitempty"`
-	HomeBalance             json.Number    `json:",omitempty"`
-	RecurDataRef            *ReferenceType `json:",omitempty"`
-	Balance                 json.Number    `json:",omitempty"`
-	Id                      string         `json:",omitempty"`
-	MetaData                MetaData       `json:",omitempty"`
+	TotalAmt              float64         `json:",omitempty"`
+	RemainingCredit       json.Number     `json:",omitempty"`
+	Line                  []Line          `json:",omitempty"`
+	ApplyTaxAfterDiscount bool            `json:",omitempty"`
+	DocNumber             string          `json:",omitempty"`
+	TxnDate               Date            `json:",omitempty"`
+	Sparse                bool            `json:"sparse,omitempty"`
+	CustomerMemo          MemoRef         `json:",omitempty"`
+	ProjectRef            ReferenceType   `json:",omitempty"`
+	Balance               json.Number     `json:",omitempty"`
+	CustomerRef           ReferenceType   `json:",omitempty"`
+	TxnTaxDetail          *TxnTaxDetail   `json:",omitempty"`
+	SyncToken             string          `json:",omitempty"`
+	CustomField           []CustomField   `json:",omitempty"`
+	ShipAddr              PhysicalAddress `json:",omitempty"`
+	EmailStatus           string          `json:",omitempty"`
+	BillAddr              PhysicalAddress `json:",omitempty"`
+	MetaData              MetaData        `json:",omitempty"`
+	BillEmail             EmailAddress    `json:",omitempty"`
+	Id                    string          `json:",omitempty"`
 }
 
-// CreateCreditMemo creates the given CreditMemo on the QuickBooks server, returning
-// the resulting CreditMemo object.
+// CreateCreditMemo creates the given CreditMemo witin QuickBooks.
 func (c *Client) CreateCreditMemo(creditMemo *CreditMemo) (*CreditMemo, error) {
 	var resp struct {
 		CreditMemo CreditMemo
 		Time       Date
 	}
 
-	if err := c.post("creditMemo", creditMemo, &resp, nil); err != nil {
+	if err := c.post("creditmemo", creditMemo, &resp, nil); err != nil {
 		return nil, err
 	}
 
@@ -52,7 +49,7 @@ func (c *Client) DeleteCreditMemo(creditMemo *CreditMemo) error {
 		return errors.New("missing id/sync token")
 	}
 
-	return c.post("creditMemo", creditMemo, nil, map[string]string{"operation": "delete"})
+	return c.post("creditmemo", creditMemo, nil, map[string]string{"operation": "delete"})
 }
 
 // FindCreditMemos retrieves the full list of credit memos from QuickBooks.
@@ -71,7 +68,7 @@ func (c *Client) FindCreditMemos() ([]CreditMemo, error) {
 	}
 
 	if resp.QueryResponse.TotalCount == 0 {
-		return nil, errors.New("no creditMemos could be found")
+		return nil, errors.New("no credit memos could be found")
 	}
 
 	creditMemos := make([]CreditMemo, 0, resp.QueryResponse.TotalCount)
@@ -84,7 +81,7 @@ func (c *Client) FindCreditMemos() ([]CreditMemo, error) {
 		}
 
 		if resp.QueryResponse.CreditMemos == nil {
-			return nil, errors.New("no creditMemos could be found")
+			return nil, errors.New("no credit memos could be found")
 		}
 
 		creditMemos = append(creditMemos, resp.QueryResponse.CreditMemos...)
@@ -100,7 +97,7 @@ func (c *Client) FindCreditMemoById(id string) (*CreditMemo, error) {
 		Time       Date
 	}
 
-	if err := c.get("creditMemo/"+id, &resp, nil); err != nil {
+	if err := c.get("creditmemo/"+id, &resp, nil); err != nil {
 		return nil, err
 	}
 
@@ -122,7 +119,7 @@ func (c *Client) QueryCreditMemos(query string) ([]CreditMemo, error) {
 	}
 
 	if resp.QueryResponse.CreditMemos == nil {
-		return nil, errors.New("could not find any creditMemos")
+		return nil, errors.New("could not find any credit memos")
 	}
 
 	return resp.QueryResponse.CreditMemos, nil
@@ -131,7 +128,7 @@ func (c *Client) QueryCreditMemos(query string) ([]CreditMemo, error) {
 // UpdateCreditMemo updates the given credit memo.
 func (c *Client) UpdateCreditMemo(creditMemo *CreditMemo) (*CreditMemo, error) {
 	if creditMemo.Id == "" {
-		return nil, errors.New("missing creditMemo id")
+		return nil, errors.New("missing credit memo id")
 	}
 
 	existingCreditMemo, err := c.FindCreditMemoById(creditMemo.Id)
@@ -154,7 +151,7 @@ func (c *Client) UpdateCreditMemo(creditMemo *CreditMemo) (*CreditMemo, error) {
 		Time       Date
 	}
 
-	if err = c.post("creditMemo", payload, &creditMemoData, nil); err != nil {
+	if err = c.post("creditmemo", payload, &creditMemoData, nil); err != nil {
 		return nil, err
 	}
 
