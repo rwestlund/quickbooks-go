@@ -6,10 +6,11 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"golang.org/x/oauth2"
 	"io/ioutil"
 	"net/http"
 	"net/url"
+
+	"golang.org/x/oauth2"
 )
 
 type BearerToken struct {
@@ -21,64 +22,30 @@ type BearerToken struct {
 	XRefreshTokenExpiresIn int64  `json:"x_refresh_token_expires_in"`
 }
 
-//
-// Method to retrieve access token (bearer token)
-// This method can only be called once
-//
-func (c *Client) RetrieveBearerToken(authorizationCode, redirectURI string) (*BearerToken, error) {
-	client := &http.Client{}
-	data := url.Values{}
-	//set parameters
-	data.Set("grant_type", "authorization_code")
-	data.Add("code", authorizationCode)
-	data.Add("redirect_uri", redirectURI)
-
-	request, err := http.NewRequest("POST", string(c.discoveryAPI.TokenEndpoint), bytes.NewBufferString(data.Encode()))
-	if err != nil {
-		return nil, err
-	}
-	//set headers
-	request.Header.Set("accept", "application/json")
-	request.Header.Set("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8")
-	request.Header.Set("Authorization", "Basic "+basicAuth(c))
-
-	resp, err := client.Do(request)
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return nil, errors.New(string(body))
-	}
-
-	bearerTokenResponse, err := getBearerTokenResponse([]byte(body))
-	return bearerTokenResponse, err
-}
-
-//
+// RefreshToken
 // Call the refresh endpoint to generate new tokens
-//
 func (c *Client) RefreshToken(refreshToken string) (*BearerToken, error) {
 	client := &http.Client{}
-	data := url.Values{}
+	urlValues := url.Values{}
+	urlValues.Set("grant_type", "refresh_token")
+	urlValues.Add("refresh_token", refreshToken)
 
-	//add parameters
-	data.Set("grant_type", "refresh_token")
-	data.Add("refresh_token", refreshToken)
-
-	request, err := http.NewRequest("POST", string(c.discoveryAPI.TokenEndpoint), bytes.NewBufferString(data.Encode()))
+	req, err := http.NewRequest("POST", c.discoveryAPI.TokenEndpoint, bytes.NewBufferString(urlValues.Encode()))
 	if err != nil {
 		return nil, err
 	}
-	//set the headers
-	request.Header.Set("accept", "application/json")
-	request.Header.Set("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8")
-	request.Header.Set("Authorization", "Basic "+basicAuth(c))
 
-	resp, err := client.Do(request)
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8")
+	req.Header.Set("Authorization", "Basic "+basicAuth(c))
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
 	defer resp.Body.Close()
+
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
@@ -88,33 +55,76 @@ func (c *Client) RefreshToken(refreshToken string) (*BearerToken, error) {
 		return nil, errors.New(string(body))
 	}
 
-	bearerTokenResponse, err := getBearerTokenResponse([]byte(body))
+	bearerTokenResponse, err := getBearerTokenResponse(body)
 	c.Client = getHttpClient(bearerTokenResponse)
+
 	return bearerTokenResponse, err
 }
 
-//
+// RetrieveBearerToken
+// Method to retrieve access token (bearer token).
+// This method can only be called once
+func (c *Client) RetrieveBearerToken(authorizationCode, redirectURI string) (*BearerToken, error) {
+	client := &http.Client{}
+	urlValues := url.Values{}
+	// set parameters
+	urlValues.Add("code", authorizationCode)
+	urlValues.Set("grant_type", "authorization_code")
+	urlValues.Add("redirect_uri", redirectURI)
+
+	req, err := http.NewRequest("POST", c.discoveryAPI.TokenEndpoint, bytes.NewBufferString(urlValues.Encode()))
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8")
+	req.Header.Set("Authorization", "Basic "+basicAuth(c))
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, parseFailure(resp)
+	}
+
+	bearerTokenResponse, err := getBearerTokenResponse(body)
+
+	return bearerTokenResponse, err
+}
+
+// RevokeToken
 // Call the revoke endpoint to revoke tokens
-//
 func (c *Client) RevokeToken(refreshToken string) error {
 	client := &http.Client{}
-	data := url.Values{}
+	urlValues := url.Values{}
+	urlValues.Add("token", refreshToken)
 
-	//add parameters
-	data.Add("token", refreshToken)
-
-	revokeEndpoint := c.discoveryAPI.RevocationEndpoint
-	request, err := http.NewRequest("POST", revokeEndpoint, bytes.NewBufferString(data.Encode()))
+	req, err := http.NewRequest("POST", c.discoveryAPI.RevocationEndpoint, bytes.NewBufferString(urlValues.Encode()))
 	if err != nil {
 		return err
 	}
-	//set headers
-	request.Header.Set("accept", "application/json")
-	request.Header.Set("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8")
-	request.Header.Set("Authorization", "Basic "+basicAuth(c))
 
-	resp, err := client.Do(request)
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded;charset=UTF-8")
+	req.Header.Set("Authorization", "Basic "+basicAuth(c))
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+
 	defer resp.Body.Close()
+
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return err
@@ -125,21 +135,22 @@ func (c *Client) RevokeToken(refreshToken string) error {
 	}
 
 	c.Client = nil
+
 	return nil
 }
 
-func getBearerTokenResponse(body []byte) (*BearerToken, error) {
-	var s = new(BearerToken)
-	err := json.Unmarshal(body, &s)
-	if err != nil {
-		return nil, errors.New(string(body))
-	}
-	return s, err
+func basicAuth(c *Client) string {
+	return base64.StdEncoding.EncodeToString([]byte(c.clientId + ":" + c.clientSecret))
 }
 
-func basicAuth(c *Client) string {
-	auth := c.clientId + ":" + c.clientSecret
-	return base64.StdEncoding.EncodeToString([]byte(auth))
+func getBearerTokenResponse(body []byte) (*BearerToken, error) {
+	token := BearerToken{}
+
+	if err := json.Unmarshal(body, &token); err != nil {
+		return nil, errors.New(string(body))
+	}
+
+	return &token, nil
 }
 
 func getHttpClient(bearerToken *BearerToken) *http.Client {

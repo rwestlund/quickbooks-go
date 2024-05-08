@@ -4,41 +4,40 @@
 package quickbooks
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
-	"net/http"
-	"net/url"
+	"fmt"
 	"strconv"
 	"strings"
 
-	null "gopkg.in/guregu/null.v4"
+	"gopkg.in/guregu/null.v4"
 )
 
 // Customer represents a QuickBooks Customer object.
 type Customer struct {
-	ID                 string          `json:"Id,omitempty"`
+	Id                 string          `json:",omitempty"`
 	SyncToken          string          `json:",omitempty"`
 	MetaData           MetaData        `json:",omitempty"`
-	Title              null.String     `json:",omitempty"`
-	GivenName          null.String     `json:",omitempty"`
-	MiddleName         null.String     `json:",omitempty"`
-	FamilyName         null.String     `json:",omitempty"`
-	Suffix             null.String     `json:",omitempty"`
+	Title              string          `json:",omitempty"`
+	GivenName          string          `json:",omitempty"`
+	MiddleName         string          `json:",omitempty"`
+	FamilyName         string          `json:",omitempty"`
+	Suffix             string          `json:",omitempty"`
 	DisplayName        string          `json:",omitempty"`
-	FullyQualifiedName null.String     `json:",omitempty"`
-	CompanyName        null.String     `json:",omitempty"`
+	FullyQualifiedName string          `json:",omitempty"`
+	CompanyName        string          `json:",omitempty"`
 	PrintOnCheckName   string          `json:",omitempty"`
 	Active             bool            `json:",omitempty"`
 	PrimaryPhone       TelephoneNumber `json:",omitempty"`
 	AlternatePhone     TelephoneNumber `json:",omitempty"`
 	Mobile             TelephoneNumber `json:",omitempty"`
 	Fax                TelephoneNumber `json:",omitempty"`
+	CustomerTypeRef    ReferenceType   `json:",omitempty"`
 	PrimaryEmailAddr   *EmailAddress   `json:",omitempty"`
 	WebAddr            *WebSiteAddress `json:",omitempty"`
-	//DefaultTaxCodeRef
+	// DefaultTaxCodeRef
 	Taxable              *bool            `json:",omitempty"`
-	TaxExemptionReasonID *string          `json:"TaxExemptionReasonId,omitempty"`
+	TaxExemptionReasonId *string          `json:",omitempty"`
 	BillAddr             *PhysicalAddress `json:",omitempty"`
 	ShipAddr             *PhysicalAddress `json:",omitempty"`
 	Notes                string           `json:",omitempty"`
@@ -46,16 +45,16 @@ type Customer struct {
 	BillWithParent       bool             `json:",omitempty"`
 	ParentRef            ReferenceType    `json:",omitempty"`
 	Level                int              `json:",omitempty"`
-	//SalesTermRef
-	//PaymentMethodRef
+	// SalesTermRef
+	// PaymentMethodRef
 	Balance         json.Number `json:",omitempty"`
 	OpenBalanceDate Date        `json:",omitempty"`
 	BalanceWithJobs json.Number `json:",omitempty"`
-	//CurrencyRef
+	// CurrencyRef
 }
 
 // GetAddress prioritizes the ship address, but falls back on bill address
-func (c Customer) GetAddress() PhysicalAddress {
+func (c *Customer) GetAddress() PhysicalAddress {
 	if c.ShipAddr != nil {
 		return *c.ShipAddr
 	}
@@ -66,7 +65,7 @@ func (c Customer) GetAddress() PhysicalAddress {
 }
 
 // GetWebsite de-nests the Website object
-func (c Customer) GetWebsite() string {
+func (c *Customer) GetWebsite() string {
 	if c.WebAddr != nil {
 		return c.WebAddr.URI
 	}
@@ -74,213 +73,154 @@ func (c Customer) GetWebsite() string {
 }
 
 // GetPrimaryEmail de-nests the PrimaryEmailAddr object
-func (c Customer) GetPrimaryEmail() string {
+func (c *Customer) GetPrimaryEmail() string {
 	if c.PrimaryEmailAddr != nil {
 		return c.PrimaryEmailAddr.Address
 	}
 	return ""
 }
 
-// QueryCustomerByName gets a customer with a given name.
-func (c *Client) QueryCustomerByName(name string) (*Customer, error) {
-
-	var r struct {
-		QueryResponse struct {
-			Customer []Customer
-			TotalCount int
-		}
+// CreateCustomer creates the given Customer on the QuickBooks server,
+// returning the resulting Customer object.
+func (c *Client) CreateCustomer(customer *Customer) (*Customer, error) {
+	var resp struct {
+		Customer Customer
+		Time     Date
 	}
-	err := c.query("SELECT * FROM Customer WHERE DisplayName = '"+
-		strings.Replace(name, "'", "''", -1)+"'", &r)
-	if err != nil {
+
+	if err := c.post("customer", customer, &resp, nil); err != nil {
 		return nil, err
 	}
 
-	// var customers = make([]Customer, 0, r.QueryResponse.TotalCount)
-	// for i := 0; i < r.QueryResponse.TotalCount; i += queryPageSize {
-		// var page, err = c.fetchCustomerPage(i + 1)
-		// if err != nil {
-			// return nil, err
-		// }
-		// customers = append(customers, page...)
-	// }
-	return &r.QueryResponse.Customer[0], nil
+	return &resp.Customer, nil
 }
 
-// FetchCustomers gets the full list of Customers in the QuickBooks account.
-func (c *Client) FetchCustomers() ([]Customer, error) {
-
-	// See how many customers there are.
-	var r struct {
+// FindCustomers gets the full list of Customers in the QuickBooks account.
+func (c *Client) FindCustomers() ([]Customer, error) {
+	var resp struct {
 		QueryResponse struct {
-			TotalCount int
+			Customers     []Customer `json:"Customer"`
+			MaxResults    int
+			StartPosition int
+			TotalCount    int
 		}
 	}
-	err := c.query("SELECT COUNT(*) FROM Customer", &r)
-	if err != nil {
+
+	if err := c.query("SELECT COUNT(*) FROM Customer", &resp); err != nil {
 		return nil, err
 	}
 
-	if r.QueryResponse.TotalCount == 0 {
-		return make([]Customer, 0), nil
+	if resp.QueryResponse.TotalCount == 0 {
+		return nil, errors.New("no customers could be found")
 	}
 
-	var customers = make([]Customer, 0, r.QueryResponse.TotalCount)
-	for i := 0; i < r.QueryResponse.TotalCount; i += queryPageSize {
-		var page, err = c.fetchCustomerPage(i + 1)
-		if err != nil {
+	customers := make([]Customer, 0, resp.QueryResponse.TotalCount)
+
+	for i := 0; i < resp.QueryResponse.TotalCount; i += queryPageSize {
+		query := "SELECT * FROM Customer ORDERBY Id STARTPOSITION " + strconv.Itoa(i+1) + " MAXRESULTS " + strconv.Itoa(queryPageSize)
+
+		if err := c.query(query, &resp); err != nil {
 			return nil, err
 		}
-		customers = append(customers, page...)
+
+		if resp.QueryResponse.Customers == nil {
+			return nil, errors.New("no customers could be found")
+		}
+
+		customers = append(customers, resp.QueryResponse.Customers...)
 	}
+
 	return customers, nil
 }
 
-// Fetch one page of results, because we can't get them all in one query.
-func (c *Client) fetchCustomerPage(startpos int) ([]Customer, error) {
-
+// FindCustomerById returns a customer with a given Id.
+func (c *Client) FindCustomerById(id string) (*Customer, error) {
 	var r struct {
+		Customer Customer
+		Time     Date
+	}
+
+	if err := c.get("customer/"+id, &r, nil); err != nil {
+		return nil, err
+	}
+
+	return &r.Customer, nil
+}
+
+// FindCustomerByName gets a customer with a given name.
+func (c *Client) FindCustomerByName(name string) (*Customer, error) {
+	var resp struct {
 		QueryResponse struct {
-			Customer      []Customer
+			Customer   []Customer
+			TotalCount int
+		}
+	}
+
+	query := "SELECT * FROM Customer WHERE DisplayName = '" + strings.Replace(name, "'", "''", -1) + "'"
+
+	if err := c.query(query, &resp); err != nil {
+		return nil, err
+	}
+
+	if len(resp.QueryResponse.Customer) == 0 {
+		return nil, errors.New("no customers could be found")
+	}
+
+	return &resp.QueryResponse.Customer[0], nil
+}
+
+// QueryCustomers accepts an SQL query and returns all customers found using it
+func (c *Client) QueryCustomers(query string) ([]Customer, error) {
+	var resp struct {
+		QueryResponse struct {
+			Customers     []Customer `json:"Customer"`
 			StartPosition int
 			MaxResults    int
 		}
 	}
-	q := "SELECT * FROM Customer ORDERBY Id STARTPOSITION " +
-		strconv.Itoa(startpos) + " MAXRESULTS " + strconv.Itoa(queryPageSize)
-	err := c.query(q, &r)
-	if err != nil {
+
+	if err := c.query(query, &resp); err != nil {
 		return nil, err
 	}
 
-	// Make sure we don't return nil if there are no customers.
-	if r.QueryResponse.Customer == nil {
-		r.QueryResponse.Customer = make([]Customer, 0)
-	}
-	return r.QueryResponse.Customer, nil
-}
-
-// FetchCustomerByID returns a customer with a given ID.
-func (c *Client) FetchCustomerByID(id string) (*Customer, error) {
-	var u, err = url.Parse(string(c.Endpoint))
-	if err != nil {
-		return nil, err
-	}
-	u.Path = "/v3/company/" + c.RealmID + "/customer/" + id
-	var v = url.Values{}
-	v.Add("minorversion", minorVersion)
-	u.RawQuery = v.Encode()
-	var req *http.Request
-	req, err = http.NewRequest("GET", u.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Add("Accept", "application/json")
-	var res *http.Response
-	res, err = c.Client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer res.Body.Close()
-	if res.StatusCode != http.StatusOK {
-		return nil, errors.New("Got status code " + strconv.Itoa(res.StatusCode))
-	}
-	var r struct {
-		Customer Customer
-		Time     Date
-	}
-	err = json.NewDecoder(res.Body).Decode(&r)
-	return &r.Customer, err
-}
-
-// CreateCustomer creates the given Customer on the QuickBooks server,
-// returning the resulting Customer object.
-func (c *Client) CreateCustomer(customer *Customer) (*Customer, error) {
-	var u, err = url.Parse(string(c.Endpoint))
-	if err != nil {
-		return nil, err
-	}
-	u.Path = "/v3/company/" + c.RealmID + "/customer"
-	var v = url.Values{}
-	v.Add("minorversion", minorVersion)
-	u.RawQuery = v.Encode()
-	var j []byte
-	j, err = json.Marshal(customer)
-	if err != nil {
-		return nil, err
-	}
-	var req *http.Request
-	req, err = http.NewRequest("POST", u.String(), bytes.NewBuffer(j))
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Accept", "application/json")
-	var res *http.Response
-	res, err = c.Client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer res.Body.Close()
-
-	if res.StatusCode != http.StatusOK {
-		return nil, parseFailure(res)
+	if resp.QueryResponse.Customers == nil {
+		return nil, errors.New("could not find any customers")
 	}
 
-	var r struct {
-		Customer Customer
-		Time     Date
-	}
-	err = json.NewDecoder(res.Body).Decode(&r)
-	return &r.Customer, err
+	return resp.QueryResponse.Customers, nil
 }
 
 // UpdateCustomer updates the given Customer on the QuickBooks server,
 // returning the resulting Customer object. It's a sparse update, as not all QB
 // fields are present in our Customer object.
 func (c *Client) UpdateCustomer(customer *Customer) (*Customer, error) {
-	var u, err = url.Parse(string(c.Endpoint))
-	if err != nil {
-		return nil, err
+	if customer.Id == "" {
+		return nil, errors.New("missing customer id")
 	}
-	u.Path = "/v3/company/" + c.RealmID + "/customer"
-	var v = url.Values{}
-	v.Add("minorversion", minorVersion)
-	u.RawQuery = v.Encode()
-	var d = struct {
+
+	existingCustomer, err := c.FindCustomerById(customer.Id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find existing customer: %v", err)
+	}
+
+	customer.SyncToken = existingCustomer.SyncToken
+
+	payload := struct {
 		*Customer
 		Sparse bool `json:"sparse"`
 	}{
 		Customer: customer,
 		Sparse:   true,
 	}
-	var j []byte
-	j, err = json.Marshal(d)
-	if err != nil {
-		return nil, err
-	}
-	var req *http.Request
-	req, err = http.NewRequest("POST", u.String(), bytes.NewBuffer(j))
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Accept", "application/json")
-	var res *http.Response
-	res, err = c.Client.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer res.Body.Close()
 
-	if res.StatusCode != http.StatusOK {
-		return nil, parseFailure(res)
-	}
-
-	var r struct {
+	var customerData struct {
 		Customer Customer
 		Time     Date
 	}
-	err = json.NewDecoder(res.Body).Decode(&r)
-	return &r.Customer, err
+
+	if err = c.post("customer", payload, &customerData, nil); err != nil {
+		return nil, err
+	}
+
+	return &customerData.Customer, nil
 }
