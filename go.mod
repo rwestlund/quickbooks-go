@@ -1,4 +1,4 @@
-module github.com/rwestlund/quickbooks-go
+module github.com/rwestlund/quickbooks-go/v2
 
 go 1.20
 
