@@ -1,4 +1,5 @@
 # quickbooks-go
+
 ![Build](https://github.com/rwestlund/quickbooks-go/workflows/Build/badge.svg)
 [![GoDoc](https://godoc.org/github.com/golang/gddo?status.svg)](http://godoc.org/github.com/rwestlund/quickbooks-go)
 [![Go Report Card](https://goreportcard.com/badge/github.com/rwestlund/quickbooks-go)](https://goreportcard.com/report/github.com/rwestlund/quickbooks-go)
@@ -16,6 +17,7 @@ use case. Pull requests welcome :)
 Before you can initialize the client, you'll need to obtain an authorization code. You can see an example of this from QuickBooks' [OAuth Playground](https://developer.intuit.com/app/developer/playground).
 
 See [_auth_flow_test.go_](./examples/auth_flow_test.go)
+
 ```go
 clientId     := "<your-client-id>"
 clientSecret := "<your-client-secret>"
@@ -57,6 +59,7 @@ qbClient.RevokeToken(bearerToken.RefreshToken)
 ## Re-using tokens
 
 See [_reuse_token_test.go_](./examples/reuse_token_test.go)
+
 ```go
 clientId     := "<your-client-id>"
 clientSecret := "<your-client-secret>"
@@ -82,4 +85,5 @@ fmt.Println(info)
 ```
 
 # License
+
 BSD-2-Clause
