@@ -10,7 +10,6 @@ import (
 // Call the discovery API.
 // See https://developer.intuit.com/app/developer/qbo/docs/develop/authentication-and-authorization/openid-connect#discovery-document
 func CallDiscoveryAPI(discoveryEndpoint EndpointURL) *DiscoveryAPI {
-	log.Println("Entering CallDiscoveryAPI ")
 	client := &http.Client{}
 	request, err := http.NewRequest("GET", string(discoveryEndpoint), nil)
 	if err != nil {
