@@ -2,6 +2,7 @@ package quickbooks
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -10,6 +11,7 @@ import (
 // Call the discovery API.
 // See https://developer.intuit.com/app/developer/qbo/docs/develop/authentication-and-authorization/openid-connect#discovery-document
 func CallDiscoveryAPI(discoveryEndpoint EndpointURL) *DiscoveryAPI {
+	fmt.Printf("Entering CallDiscoveryAPI\n")
 	client := &http.Client{}
 	request, err := http.NewRequest("GET", string(discoveryEndpoint), nil)
 	if err != nil {
