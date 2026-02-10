@@ -2,3 +2,6 @@
 
 # IntelliJ
 .idea
+CLAUDE.md
+.claude
+.env

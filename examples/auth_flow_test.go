@@ -2,22 +2,30 @@ package examples
 
 import (
 	"fmt"
+	"os"
 	"testing"
 
+	"github.com/joho/godotenv"
 	"github.com/rwestlund/quickbooks-go"
 	"github.com/stretchr/testify/require"
 )
 
 func TestAuthorizationFlow(t *testing.T) {
-	clientId := "<your-client-id>"
-	clientSecret := "<your-client-secret>"
-	realmId := "<realm-id>"
+	_ = godotenv.Load("../.env") // Load .env file if it exists
+
+	clientId := os.Getenv("QB_CLIENT_ID")
+	clientSecret := os.Getenv("QB_CLIENT_SECRET")
+	realmId := os.Getenv("QB_REALM_ID")
+	authorizationCode := os.Getenv("QB_AUTH_CODE")
+
+	if clientId == "" || clientSecret == "" || realmId == "" || authorizationCode == "" {
+		t.Skip("Skipping TestAuthorizationFlow; QB_CLIENT_ID, QB_CLIENT_SECRET, QB_REALM_ID, or QB_AUTH_CODE not set")
+	}
 
 	qbClient, err := quickbooks.NewClient(clientId, clientSecret, realmId, false, "", nil)
 	require.NoError(t, err)
 
 	// To do first when you receive the authorization code from quickbooks callback
-	authorizationCode := "<received-from-callback>"
 	redirectURI := "https://developer.intuit.com/v2/OAuth2Playground/RedirectUrl"
 	bearerToken, err := qbClient.RetrieveBearerToken(authorizationCode, redirectURI)
 	require.NoError(t, err)
